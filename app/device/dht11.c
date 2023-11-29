@@ -14,42 +14,36 @@ static uint32_t  tickPeriod;
 volatile uint8_t checksum = 0;
 
 /*
- *  DHT11的数据格式  <湿度数据H8>:<湿度数据L8>:<温度数据H8>:<温度数据L8>:<校验和-8bit> 。
- *  用户MCU发送一次开始信号后,DHT11从低功耗模式转换到高速模式,等待主机开始信号结束后,DHT11发送响应信号,送出40bit的数据,并触发一次信号采集,用户可选择读取部分数据.
- *  采样步骤：总线空闲状态为高电平,主机把总线拉低等待DHT11响应,主机把总线拉低必须大于18毫秒,保证DHT11能检测到起始信号。DHT11接收到主机的开始信号后,等待主机开始信号结束,
- *  然后发送80us低电平响应信号，再把总线拉高80us,准备发送数据,每一bit数据都以50us低电平时隙开始,这里的典型值是26~28us高电平为数字0，70us高电平是数字1，间隙是50us。
- *  釆样周不能低于1秒钟。
+ *  Single-bus data format is used for communication and synchronization between MCU and
+ * DHT11 sensor. One communication process is about 4ms.
+ * Data consists of decimal and integral parts. A complete data transmission is 40bit, and the
+ * sensor sends higher data bit first.
+ * Data format: 8bit integral RH data + 8bit decimal RH data + 8bit integral T data + 8bit decimal T
+ * data + 8bit check sum. If the data transmission is right, the check-sum should be the last 8bit of
+ * "8bit integral RH data + 8bit decimal RH data + 8bit integral T data + 8bit decimal T data".
  *
  * */
 void DHT11_Reset() {
     tickPeriod = SysTickPeriodGet();
 
 
-       // 设置PE0 为输出模式
     GPIOPinTypeGPIOOutput(GPIO_PORTE_BASE, GPIO_PIN_0);
 
-    /* 拉低PE0的电平 */
+    /* set gpioe pin0 output low */
     GPIOPinWrite(GPIO_PORTE_BASE,GPIO_PIN_0,0);
-    /* 微秒级延时可以使用C标准库里的 usleep */
-     usleep(20000);
-    /* vTaskDelay 是FreeRTOS里的延时函数, 拉低控制器总线PE0 至少18ms */
-//    vTaskDelay(20);
-
-    GPIOPinWrite(GPIO_PORTE_BASE,GPIO_PIN_0,1); /* 拉高控制器总线PE0 */
-    /* SysCtlDelay的延时是根据系统时钟主频去计算，如下：
+    usleep(20000);
+    /* set gpioe pin0 output high */
+    GPIOPinWrite(GPIO_PORTE_BASE,GPIO_PIN_0,1);
+    /* The delay of SysCtlDelay is calculated based on the system clock frequency, as follows:
      * systemClock = SysCtlClockFreqSet((SYSCTL_XTAL_25MHZ | SYSCTL_OSC_MAIN |
                                                   SYSCTL_USE_PLL | SYSCTL_CFG_VCO_480),
                                                   120000000);
-     * 这里设置时钟频率是120M, 它的时间周期就是 1/120 us，如果要延时1us,SysCtlDelay(40)就可以得到1us,如果是16M的主频，SysCtlDelay(5)是1us。
-     * 因为是刚入门学，所以用了一个很笨的方法求得它的延时参数，使用一个逻辑分析仪（8路 24M，某宝在35元左右），抓它一个GPIO的电平，拉高GPIO的电平，SysCtlDelay(40)，拉低GPIO的电平，
-     * 打开逻辑分析仪的软件，就能很精确的知道这的延时参数。
+     * The clock frequency is set here to 120M, and its time period is 1/120 us.
+     * If you want to delay 1us, SysCtlDelay(40) can get 1us. If the main frequency is 16M, SysCtlDelay(5) is 1us.
      * */
-//    SysCtlDelay((tickPeriod / 3000 )*40);  // 拉高控制器总线PE0 保持40us 的延时
     usleep(20);
-//    SysCtlDelay(800);
-//    usleep(20);
-
-    GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0);   // 设置控制器的总线为输入模式
+    /* set gpioe pin0 to input direct */
+    GPIOPinTypeGPIOInput(GPIO_PORTE_BASE, GPIO_PIN_0);
 
 }
 
@@ -60,7 +54,6 @@ uint8_t DHT11_Read_Byte(void){
     for(i = 0 ; i < 8;i++)
     {
         while(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0)!= GPIO_PIN_0);
-        //        https://blog.csdn.net/Attack_on_cc/article/details/86668182
         SysCtlDelay((tickPeriod / 3000 )*35);
         dat <<=1;
         if(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0) ==  GPIO_PIN_0){
@@ -78,17 +71,12 @@ uint8_t DHT11_Read_Data(uint8_t *temp,uint8_t *humi){
 
     DHT11_Reset();
 
-    // 如果控制器检测到DHT11的低电平信号,这里在初学时，GPIOPinRead会返回的值，不是如常规的我们认为高电平是1，低电平是0，
-    // 而是返回的高电平的PIN值，如： 读取GPIO_PIN_0是高电平是返回是 0x1,低电平是0,读取GPIO_PIN_3是高电平是返回是0x8低电平是0.
     if(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0)!= GPIO_PIN_0) {
-       // DHT11拉低总线时程序在此等待
        while(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0) != GPIO_PIN_0);
-       // DHT11释放总线时程序在此等待
        while(GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_0) == GPIO_PIN_0);
        for(i = 0 ; i < 5;i++){
-            buf[i]=DHT11_Read_Byte();  // 读取DHT11的40bit数据。
+            buf[i]=DHT11_Read_Byte();
        }
-       // 如果检验和与上次一样，就不用反馈数据。
        if(checksum == buf[4])
            return 1;
        checksum = buf[4];

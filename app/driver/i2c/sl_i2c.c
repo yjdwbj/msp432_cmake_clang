@@ -8,7 +8,6 @@ static I2C_Handle handle=NULL;
 static I2C_Transaction transaction;
 
 /*
- * 按官方API的文档描述，该驱动不支持多主机仲裁，就是想在FreeRTOS内，使用多线程来分别读取不同的I2C设备是不可行，经实践事实上也是如此。
  * Multi-master arbitration is not supported; therefore, this driver assumes it is the only I2C master on the bus.
  * This I2C driver's API set provides the ability to transmit and receive data over an I2C bus between the I2C master and I2C slave(s).
  */
@@ -65,12 +64,10 @@ static void i2cErrorHandler(I2C_Transaction *transaction)
 void open_i2c(uint32_t i2c)
 {
     /*
-     * 按照官方的I2C Driver API描述 如下:
      * The I2C driver is designed to operate as an I2C master and will not function as an I2C slave.
      * Multi-master arbitration is not supported; therefore, this driver assumes it is the only I2C master on the bus.
      * This I2C driver's API set provides the ability to transmit and receive data over an I2C bus between the I2C master and I2C slave(s).
      *  The application is responsible for manipulating and interpreting the data.
-     *  但这里使用 sem_wait,sem_post 是可以为Multi-master使用的。
      */
     I2C_Params_init(&params);
     params.bitRate= I2C_400kHz;

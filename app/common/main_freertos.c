@@ -35,7 +35,6 @@
  */
 #include <stdint.h>
 
-
 /* POSIX Header files */
 #include <pthread.h>
 
@@ -44,54 +43,39 @@
 #include "task.h"
 
 /* TI-RTOS Header files */
-#include <ti/drivers/GPIO.h>
 #include <ti/display/Display.h>
-
+#include <ti/drivers/GPIO.h>
 
 /* Example/Board Header files */
 #include "Board.h"
-//#include "ti/devices/msp432e4/inc/msp432e401y.h"
+// #include "ti/devices/msp432e4/inc/msp432e401y.h"
 #include "device/dht11.h"
-#include "device/mpu6050/mpu6050.h"
 #include "device/hmc5883l/hmc5883l.h"
+#include "device/mpu6050/mpu6050.h"
 
-
-#include <mqueue.h>
-#include <ti/net/mqtt/mqttclient.h>
 #include "client_cbs.h"
 #include "device/mpu6050/eMPL/inv_mpu.h"
 #include "device/mpu6050/eMPL/inv_mpu_dmp_motion_driver.h"
+#include <mqueue.h>
+#include <ti/net/mqtt/mqttclient.h>
 
-
-
+#include "bluetooth/project_zero.h"
 #include "uart_term.h"
 
-/* 引入蓝牙相关工程 */
-#include "bluetooth/project_zero.h"
+// Display_Handle displayOut;
 
-
-//Display_Handle displayOut;
-
-
-extern void * mainThread(void *arg0);
+extern void *mainThread(void *arg0);
 
 /* Stack size in bytes */
-#define THREADSTACKSIZE   8192
-//#define HTTPSTASKSTACKSIZE 8192
+#define THREADSTACKSIZE 8192
+// #define HTTPSTASKSTACKSIZE 8192
 
-uint8_t DHT11_Read_Data(uint8_t *temp,uint8_t *humi);
-
-// 有问题先搜索 https://e2e.ti.com/ ，再是https://e2echina.ti.com/ 后面是各种搜索。
-/**
- * Linux CCS查看Sysconfig时闪动问题 ，试用 export SWT_GTK3=0
- */
-
+uint8_t DHT11_Read_Data(uint8_t *temp, uint8_t *humi);
 
 /*
  *  ======== main ========
  */
-int main(void)
-{
+int main(void) {
 
     volatile uint32_t sram_size;
     volatile uint32_t flash_size;
@@ -105,61 +89,50 @@ int main(void)
 
     /* Call board init functions */
     Board_initGeneral();
-
     GPIO_init();
     PWM_init();
-//    UART_init();
     Timer_init();
     I2C_init();
     SPI_init();
 
-
-
     uartHandle = InitTerm();
     /*remove uart receive from LPDS dependency    */
     UART_control(uartHandle, UART_CMD_RXDISABLE, NULL);
-    /* 参考这里 https://blog.csdn.net/D_XingGuang/article/details/89320525 */
     /* Set priority and stack size attributes */
     pthread_attr_init(&pAttrs);
     priParam.sched_priority = 1;
     detachState = PTHREAD_CREATE_DETACHED;
     retc = pthread_attr_setdetachstate(&pAttrs, detachState);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         /* pthread_attr_setdetachstate() failed */
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
     pthread_attr_setschedparam(&pAttrs, &priParam);
     retc |= pthread_attr_setstacksize(&pAttrs, THREADSTACKSIZE);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         /* pthread_attr_setstacksize() failed */
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
-    /* mqtt_client_app.c 里的 mainThread */
 
     retc = pthread_create(&thread, &pAttrs, mainThread, NULL);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         /* pthread_create() failed */
-        while (1){}
+        while (1) {
+        }
     }
 
     /* ProjectZero Task */
-       ProjectZero_createTask();
+    ProjectZero_createTask();
 
-       /* Update SNP Task */
-       updateSNP_createTask();
+    /* Update SNP Task */
+    updateSNP_createTask();
 
-       /* Button Handler Task */
-       buttonTask_createTask();
-
+    /* Button Handler Task */
+    buttonTask_createTask();
 
     /* Start the FreeRTOS scheduler */
     vTaskStartScheduler();
@@ -175,11 +148,9 @@ int main(void)
 //! \return none
 //!
 //*****************************************************************************
-void vApplicationMallocFailedHook()
-{
+void vApplicationMallocFailedHook() {
     /* Handle Memory Allocation Errors */
-    while (1)
-    {
+    while (1) {
     }
 }
 
@@ -192,15 +163,11 @@ void vApplicationMallocFailedHook()
 //! \return none
 //!
 //*****************************************************************************
-void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
-{
-    /* 参考这里 https://www.freertos.org/Stacks-and-stack-overflow-checking.html */
-    //Handle FreeRTOS Stack Overflow
-    while (1)
-    {
+void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName) {
+    /* Refer  https://www.freertos.org/Stacks-and-stack-overflow-checking.html */
+    while (1) {
     }
 }
-
 
 ////*****************************************************************************
 ////
@@ -211,10 +178,10 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 ////! \return none
 ////!
 ////*****************************************************************************
-//void vApplicationIdleHook(void)
+// void vApplicationIdleHook(void)
 //{
-//    /* Handle Idle Hook for Profiling, Power Management etc */
-//}
+//     /* Handle Idle Hook for Profiling, Power Management etc */
+// }
 
 //*****************************************************************************
 //
@@ -226,28 +193,25 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 //! \return none
 //!
 //*****************************************************************************
-#if defined (__GNUC__)
-void * _sbrk(uint32_t delta)
-{
+#if defined(__GNUC__)
+void *_sbrk(uint32_t delta) {
     extern char _end; /* Defined by the linker */
     extern char __HeapLimit;
     static char *heap_end;
     static char *heap_limit;
     char *prev_heap_end;
 
-    if(heap_end == 0)
-    {
+    if (heap_end == 0) {
         heap_end = &_end;
         heap_limit = &__HeapLimit;
     }
 
     prev_heap_end = heap_end;
-    if(prev_heap_end + delta > heap_limit)
-    {
-        return((void *) -1L);
+    if (prev_heap_end + delta > heap_limit) {
+        return ((void *)-1L);
     }
     heap_end += delta;
-    return((void *) prev_heap_end);
+    return ((void *)prev_heap_end);
 }
 
 #endif

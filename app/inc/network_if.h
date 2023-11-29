@@ -59,14 +59,16 @@ extern "C"
 /* is executed.                                                               */
 #define SL_SUPPORT_IPV6
 
+#define STR(x) #x
+#define STRINGIFY(x) STR(x)
+
 /* AP SSID                                                                    */
-#define SSID_NAME               "moto"
+#define SSID_NAME               STRINGIFY(_SSID_NAME)
 //#define SSID_NAME                "lcy-y1s-2.4G"
 /* Security type (OPEN or WEP or WPA)                                         */
 #define SECURITY_TYPE           SL_WLAN_SEC_TYPE_WPA_WPA2
 /* Password of the secured AP                                                 */
-#define SECURITY_KEY            "vzv15987"
-//#define SECURITY_KEY              "15916203772"
+#define SECURITY_KEY            STRINGIFY(_SSID_PWD)
 
 #define SSID_AP_MODE            "<ap-ssid>"
 #define SEC_TYPE_AP_MODE        SL_WLAN_SEC_TYPE_OPEN

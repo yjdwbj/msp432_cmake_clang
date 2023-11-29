@@ -40,19 +40,19 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "uart_term.h"
 #include "Board.h"
-//#include "ti_drivers_config.h"
+#include "uart_term.h"
+// #include "ti_drivers_config.h"
 
-extern int vsnprintf(char * s,
+extern int vsnprintf(char *s,
                      size_t n,
-                     const char * format,
+                     const char *format,
                      va_list arg);
 
 //*****************************************************************************
 //                          LOCAL DEFINES
 //*****************************************************************************
-#define IS_SPACE(x)       (x == 32 ? 1 : 0)
+#define IS_SPACE(x) (x == 32 ? 1 : 0)
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES
@@ -71,8 +71,7 @@ static UART_Handle uartHandle;
 //! \return none
 //
 //*****************************************************************************
-UART_Handle InitTerm(void)
-{
+UART_Handle InitTerm(void) {
     UART_Params uartParams;
 
     UART_init();
@@ -85,18 +84,15 @@ UART_Handle InitTerm(void)
     uartParams.baudRate = 115200;
 
     uartHandle = UART_open(MSP_EXP432E401Y_UART0, &uartParams);
-    if(uartHandle == NULL)
-    {
-        // UART_open failed
-        while(1)
-        {
+    if (uartHandle == NULL) {
+        while (1) {
             ;
         }
     }
     /* remove uart receive from LPDS dependency */
     UART_control(uartHandle, UART_CMD_RXDISABLE, NULL);
 
-    return(uartHandle);
+    return (uartHandle);
 }
 
 //*****************************************************************************
@@ -113,39 +109,30 @@ UART_Handle InitTerm(void)
 //
 //*****************************************************************************
 int Report(const char *pcFormat,
-           ...)
-{
+           ...) {
     int iRet = 0;
-    char        *pcBuff;
-    char        *pcTemp;
+    char *pcBuff;
+    char *pcTemp;
     int iSize = 256;
     va_list list;
 
-    pcBuff = (char*)malloc(iSize);
-    if(pcBuff == NULL)
-    {
-        return(-1);
+    pcBuff = (char *)malloc(iSize);
+    if (pcBuff == NULL) {
+        return (-1);
     }
-    while(1)
-    {
-        va_start(list,pcFormat);
+    while (1) {
+        va_start(list, pcFormat);
         iRet = vsnprintf(pcBuff, iSize, pcFormat, list);
         va_end(list);
-        if((iRet > -1) && (iRet < iSize))
-        {
+        if ((iRet > -1) && (iRet < iSize)) {
             break;
-        }
-        else
-        {
+        } else {
             iSize *= 2;
-            if((pcTemp = realloc(pcBuff, iSize)) == NULL)
-            {
+            if ((pcTemp = realloc(pcBuff, iSize)) == NULL) {
                 Message("Could not reallocate memory\n\r");
                 iRet = -1;
                 break;
-            }
-            else
-            {
+            } else {
                 pcBuff = pcTemp;
             }
         }
@@ -153,7 +140,7 @@ int Report(const char *pcFormat,
     Message(pcBuff);
     free(pcBuff);
 
-    return(iRet);
+    return (iRet);
 }
 
 //*****************************************************************************
@@ -165,35 +152,31 @@ int Report(const char *pcFormat,
 //! \return length of trimmed string
 //
 //*****************************************************************************
-int TrimSpace(char * pcInput)
-{
+int TrimSpace(char *pcInput) {
     size_t size;
-    char        *endStr;
-    char        *strData = pcInput;
+    char *endStr;
+    char *strData = pcInput;
     char index = 0;
 
     size = strlen(strData);
 
-    if(!size)
-    {
-        return(0);
+    if (!size) {
+        return (0);
     }
 
     endStr = strData + size - 1;
-    while((endStr >= strData) && (IS_SPACE(*endStr)))
-    {
+    while ((endStr >= strData) && (IS_SPACE(*endStr))) {
         endStr--;
     }
     *(endStr + 1) = '\0';
 
-    while(*strData && IS_SPACE(*strData))
-    {
+    while (*strData && IS_SPACE(*strData)) {
         strData++;
         index++;
     }
     memmove(pcInput, strData, strlen(strData) + 1);
 
-    return(strlen(pcInput));
+    return (strlen(pcInput));
 }
 
 //*****************************************************************************
@@ -208,8 +191,7 @@ int TrimSpace(char * pcInput)
 //!
 //*****************************************************************************
 int GetCmd(char *pcBuffer,
-           unsigned int uiBufLen)
-{
+           unsigned int uiBufLen) {
     char cChar;
     int iLen = 0;
 
@@ -224,30 +206,25 @@ int GetCmd(char *pcBuffer,
     //
     // Checking the end of Command
     //
-    while(1)
-    {
+    while (1) {
         //
         // Handling overflow of buffer
         //
-        if(iLen >= uiBufLen)
-        {
-            return(-1);
+        if (iLen >= uiBufLen) {
+            return (-1);
         }
 
         //
         // Copying Data from UART into a buffer
         //
-        if((cChar == '\r') || (cChar == '\n'))
-        {
+        if ((cChar == '\r') || (cChar == '\n')) {
 #ifdef UART_NONPOLLING
             UART_write(uartHandle, &cChar, 1);
 #else
             UART_writePolling(uartHandle, &cChar, 1);
 #endif
             break;
-        }
-        else if(cChar == '\b')
-        {
+        } else if (cChar == '\b') {
             //
             // Deleting last character when you hit backspace
             //
@@ -264,17 +241,14 @@ int GetCmd(char *pcBuffer,
 #else
             UART_writePolling(uartHandle, &ch, 1);
 #endif
-            if(iLen)
-            {
+            if (iLen) {
 #ifdef UART_NONPOLLING
                 UART_write(uartHandle, &cChar, 1);
 #else
                 UART_writePolling(uartHandle, &cChar, 1);
 #endif
                 iLen--;
-            }
-            else
-            {
+            } else {
                 ch = '\a';
 #ifdef UART_NONPOLLING
                 UART_write(uartHandle, &ch, 1);
@@ -282,9 +256,7 @@ int GetCmd(char *pcBuffer,
                 UART_writePolling(uartHandle, &ch, 1);
 #endif
             }
-        }
-        else
-        {
+        } else {
             //
             // Echo the received character
             //
@@ -306,7 +278,7 @@ int GetCmd(char *pcBuffer,
 
     *(pcBuffer + iLen) = '\0';
 
-    return(iLen);
+    return (iLen);
 }
 
 //*****************************************************************************
@@ -324,8 +296,7 @@ int GetCmd(char *pcBuffer,
 //!       called in task/thread context only.
 //
 //*****************************************************************************
-void Message(const char *str)
-{
+void Message(const char *str) {
 #ifdef UART_NONPOLLING
     UART_write(uartHandle, str, strlen(str));
 #else
@@ -345,8 +316,7 @@ void Message(const char *str)
 //! \return none
 //
 //*****************************************************************************
-void ClearTerm()
-{
+void ClearTerm() {
     Message("\33[2J\r");
 }
 
@@ -359,8 +329,7 @@ void ClearTerm()
 //! \return Character
 //
 //*****************************************************************************
-char getch(void)
-{
+char getch(void) {
     char ch;
 
 #ifdef UART_NONPOLLING
@@ -368,7 +337,7 @@ char getch(void)
 #else
     UART_readPolling(uartHandle, &ch, 1);
 #endif
-    return(ch);
+    return (ch);
 }
 
 //*****************************************************************************
@@ -380,8 +349,7 @@ char getch(void)
 //! \return none
 //
 //*****************************************************************************
-void putch(char ch)
-{
+void putch(char ch) {
 #ifdef UART_NONPOLLING
     UART_write(uartHandle, &ch, 1);
 #else

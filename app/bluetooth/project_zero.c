@@ -422,7 +422,7 @@ static void ProjectZero_init(void)
     UART_PRINT("--------- Project Zero Example ---------\r\n");
     UART_PRINT("Initializing the user task, hardware, BLE stack and services.\r\n");
 
-    /* Register to receive notifications from LED service if characteristics 
+    /* Register to receive notifications from LED service if characteristics
      have been written to */
     LEDService_registerAppCBs(&ProjectZero_LEDServiceCBs);
 
@@ -621,7 +621,7 @@ static void *ProjectZero_taskFxn(void *arg0)
             /* Setup NP module */
             SAP_open(&sapParams);
 
-            /* Register Application thread's callback to receive asynchronous 
+            /* Register Application thread's callback to receive asynchronous
              requests from the NP. */
             SAP_setAsyncCB(ProjectZero_asyncCB);
 
@@ -821,7 +821,6 @@ static void user_handleButtonPress(button_state_t *pState)
 {
     struct msgQueue queueElemRecv;
     struct msgQueue queueElement;
-    // 这里把蓝牙里的button profile 移到这里。
     /* Update the service with the new value.
      Will automatically send notification/indication if enabled. */
     switch (pState->pinId)
@@ -834,7 +833,6 @@ static void user_handleButtonPress(button_state_t *pState)
             queueElement.event = 1; // PUBLISH_PUSH_BUTTON_PRESSED;
             queueElement.msgPtr = NULL;
             queueElement.topLen = pState->state;
-            /* 把按键值发到mqtt的接收队列里去。                             */
             if (MQTT_SendMsgToQueue(&queueElement))
             {
                 UART_PRINT("Queue is full\r\n");

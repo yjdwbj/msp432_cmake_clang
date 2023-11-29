@@ -2,7 +2,6 @@
 
 #include "Board.h"
 
-
 /*
  *  =============================== WiFi ===============================
  *
@@ -10,25 +9,25 @@
  * as part of the SimpleLink SDK WiFi plugin. These are configured for SPI mode.
  * Any changes here will need to be configured on the CC31xx device as well
  */
-//#include <ti/drivers/net/wifi/porting/SIMPLELINKWIFI.h>
-//const SIMPLELINKWIFI_HWAttrsV1 wifiSimplelinkHWAttrs =
+// #include <ti/drivers/net/wifi/porting/SIMPLELINKWIFI.h>
+// const SIMPLELINKWIFI_HWAttrsV1 wifiSimplelinkHWAttrs =
 //{
-//    .spiIndex = MSP_EXP432E401Y_SPI3,
-//    .hostIRQPin = MSP_EXP432E401Y_HOST_IRQ,
-//    .nHIBPin = MSP_EXP432E401Y_nHIB_pin,
-//    .csPin = MSP_EXP432E401Y_CS_pin,
-//    .maxDMASize = 1024,
-//    .spiBitRate = 3000000
-//};
+//     .spiIndex = MSP_EXP432E401Y_SPI3,
+//     .hostIRQPin = MSP_EXP432E401Y_HOST_IRQ,
+//     .nHIBPin = MSP_EXP432E401Y_nHIB_pin,
+//     .csPin = MSP_EXP432E401Y_CS_pin,
+//     .maxDMASize = 1024,
+//     .spiBitRate = 3000000
+// };
 //
-//const uint_least8_t WiFi_count = 1;
+// const uint_least8_t WiFi_count = 1;
 //
-//const WiFi_Config WiFi_config[1] =
+// const WiFi_Config WiFi_config[1] =
 //{
-//    {
-//        .hwAttrs = &wifiSimplelinkHWAttrs,
-//    }
-//};
+//     {
+//         .hwAttrs = &wifiSimplelinkHWAttrs,
+//     }
+// };
 
 #include <ti/drivers/net/wifi/simplelink.h>
 
@@ -41,12 +40,15 @@
  */
 const SlWifiCC32XXConfig_t SimpleLinkWifiCC32XX_config = {
     .Mode = ROLE_STA,
-//    .Ipv4Mode =  SL_NETCFG_IPV4_STA_ADDR_MODE ,
+#ifdef _USE_IPV6
     .Ipv4Mode = SL_NETCFG_IPV6_ADDR_GLOBAL,
-    .ConnectionPolicy = SL_WLAN_CONNECTION_POLICY(1,0,0,0),
+#else
+    .Ipv4Mode = SL_NETCFG_IPV4_STA_ADDR_MODE,
+#endif
+    .ConnectionPolicy = SL_WLAN_CONNECTION_POLICY(1, 0, 0, 0),
     .PMPolicy = SL_WLAN_NORMAL_POLICY,
     .MaxSleepTimeMS = 0,
-    .ScanPolicy = SL_WLAN_SCAN_POLICY(0,0),
+    .ScanPolicy = SL_WLAN_SCAN_POLICY(0, 0),
     .ScanIntervalInSeconds = 0,
     .Ipv4Config = SL_NETCFG_ADDR_DHCP,
     .Ipv4 = 0,
@@ -54,5 +56,4 @@ const SlWifiCC32XXConfig_t SimpleLinkWifiCC32XX_config = {
     .IpGateway = 0,
     .IpDnsServer = 0,
     .ProvisioningStop = 1,
-    .DeleteAllProfile = 0
-};
+    .DeleteAllProfile = 0};

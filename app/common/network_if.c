@@ -136,15 +136,17 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pSlWlanEvent)
                pSlWlanEvent->Data.Connect.SsidLen);
         memcpy(g_ucConnectionBSSID, pSlWlanEvent->Data.Connect.Bssid,
                SL_WLAN_BSSID_LENGTH);
-
         UART_PRINT(
-            "[WLAN EVENT] STA Connected to the AP: %s , BSSID: "
-            "%x:%x:%x:%x:%x:%x\r\n",
-            g_ucConnectionSSID,
-            g_ucConnectionBSSID[0], g_ucConnectionBSSID[1],
-            g_ucConnectionBSSID[2],
-            g_ucConnectionBSSID[3], g_ucConnectionBSSID[4],
-            g_ucConnectionBSSID[5]);
+            "[WLAN EVENT] STA Connected to the AP: %s \r\n",
+            g_ucConnectionSSID);
+        // UART_PRINT(
+        //     "[WLAN EVENT] STA Connected to the AP: %s , BSSID: "
+        //     "%x:%x:%x:%x:%x:%x\r\n",
+        //     g_ucConnectionSSID,
+        //     g_ucConnectionBSSID[0], g_ucConnectionBSSID[1],
+        //     g_ucConnectionBSSID[2],
+        //     g_ucConnectionBSSID[3], g_ucConnectionBSSID[4],
+        //     g_ucConnectionBSSID[5]);
         break;
 
     case SL_WLAN_EVENT_DISCONNECT:
@@ -255,9 +257,9 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent)
         SlNetCfgIpV6Args_t ipV6;
         _u16 len = sizeof(SlNetCfgIpV6Args_t);
         _u16 ConfigOpt = 0; //return value could be one of the following: SL_NETCFG_ADDR_STATIC / SL_NETCFG_ADDR_STATELESS / SL_NETCFG_ADDR_STATEFUL
-        SlIpV6AcquiredAsync_t *pEventData = NULL;
-        pEventData = &pNetAppEvent->Data.IpAcquiredV6;
-        // 获取本地的IPv6
+        // SlIpV6AcquiredAsync_t *pEventData = NULL;
+        // pEventData = &pNetAppEvent->Data.IpAcquiredV6;
+        // Get local IPv6 address
         //        if(sl_NetCfgGet(SL_NETCFG_IPV6_ADDR_LOCAL,&ConfigOpt,&len,(_u8 *)&ipV6)){
         //            UART_PRINT("Ipv6 Local sl_NetCfgGet error\r\n");
         //        }

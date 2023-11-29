@@ -50,32 +50,31 @@
 //
 //*****************************************************************************
 /* Standard includes                                                         */
-#include <stdlib.h>
-#include <pthread.h>
 #include <mqueue.h>
+#include <pthread.h>
 #include <semaphore.h>
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 
-
 /* TI-Driver includes                                                        */
 #include <ti/drivers/GPIO.h>
-#include <ti/drivers/SPI.h>
 #include <ti/drivers/I2C.h>
+#include <ti/drivers/SPI.h>
 
 /* Simplelink includes                                                       */
 #include <ti/drivers/net/wifi/simplelink.h>
 
 /* SlNetSock includes
- * 注意这里是使用simplelink-sdk-wifi-plugin 里的文件。                                                */
+ * Note: These files are came from simplelink-sdk-wifi-plugin。                                                */
 #include <ti/drivers/net/wifi/slnetifwifi.h>
-//#include <ti/net/slnetif.h>
-//#include <ti/net/slnetsock.h>
-//#include <ti/net/slnetutils.h>
+// #include <ti/net/slnetif.h>
+// #include <ti/net/slnetsock.h>
+// #include <ti/net/slnetutils.h>
 
 // ndk socket
-#include <ti/ndk/inc/socketndk.h>
 #include <ti/ndk/inc/netmain.h>
+#include <ti/ndk/inc/socketndk.h>
 #include <ti/ndk/inc/stkmain.h>
 
 /* MQTT Library includes                                                     */
@@ -88,14 +87,10 @@
 /* Application includes                                                      */
 #include "Board.h"
 #include "client_cbs.h"
-//#include <ti/drivers/gpio/GPIOMSP432E4.h>
-
-// 使用Sysconfig 配置生产的硬件定义文件。
-//#include "ti_drivers_config.h"
+// #include <ti/drivers/gpio/GPIOMSP432E4.h>
 
 #include "ti/devices/msp432e4/inc/msp432e401y.h"
 
-// 使用下面函数，把数据发送到BLE的特征服务里去。
 #define DATA_HMC5883L_CHAR2 0x02
 #define DATA_DHT11_CHAR3 0x03
 #define DATA_BMP180_CHAR4 0x04
@@ -108,7 +103,7 @@
 
 uint8_t DataService_setParameter(uint8_t param, uint16_t len, void *value);
 
-// 这里需要重写SDK内的函数指针，让它支持IPv6
+/* This function is to enable it to support IPv6. */
 extern MQTT_DeviceNetServices_t MQTTClient_net;
 
 #define IPv6_DEVICE_INDEX 1
@@ -117,8 +112,8 @@ extern MQTT_DeviceNetServices_t MQTTClient_net;
 //                          LOCAL DEFINES
 //*****************************************************************************
 /* enables secured client                                                    */
-//#define SECURE_CLIENT
-// 参考示例 https://e2e.ti.com/support/wireless-connectivity/wifi/f/968/t/862067?tisearch=e2e-sitesearch&keymatch=mbedtls%252525252520ssl%252525252520client
+// #define SECURE_CLIENT
+/*  Reference https://e2e.ti.com/support/wireless-connectivity/wifi/f/968/t/862067?tisearch=e2e-sitesearch&keymatch=mbedtls%252525252520ssl%252525252520client */
 
 /* enables client authentication by the server                               */
 #define CLNT_USR_PWD
@@ -142,18 +137,19 @@ extern MQTT_DeviceNetServices_t MQTTClient_net;
 #define WILL_QOS MQTT_QOS_0
 #define WILL_RETAIN true
 
+#define STR(x) #x
+#define STRINGIFY(x) STR(x)
+
 /* Defining Broker IP address and port Number                                */
-//#define SERVER_ADDRESS           "messagesight.demos.ibm.com"
-//#define SERVER_ADDRESS           "m2m.eclipse.org"
-//#define SERVER_ADDRESS           "test.mosquitto.org"
-//#define  SERVER_ADDRESS          "broker.hivemq.com"
-//#define SERVER_ADDRESS             "173.255.223.213"   // USA  vps
-//#define SERVER_ADDRESS             "192.168.1.10"
-#define SERVER_ADDRESS              "iot.lcycc.click"
-//#define SERVER_ADDRESS           "2409:8a55:2412:5bc0:ea4e:6ff:fe5b:fa98"
-//#define SERVER_ADDRESS             "fe80::ea4e:6ff:fe5b:fa98"
-//#define SERVER_IP_ADDRESS        "192.168.178.67"
-#define SERVER_IP_ADDRESS           "23.94.201.33"
+// #define SERVER_ADDRESS           "messagesight.demos.ibm.com"
+// #define SERVER_ADDRESS           "m2m.eclipse.org"
+// #define SERVER_ADDRESS           "test.mosquitto.org"
+// #define  SERVER_ADDRESS          "broker.hivemq.com"
+// #define SERVER_ADDRESS             "192.168.1.10"
+#define SERVER_ADDRESS              STRINGIFY(_MQTT_SRV_IP)
+// #define SERVER_ADDRESS             "fe80::ea4e:6ff:fe5b:fa98"
+// #define SERVER_IP_ADDRESS        "192.168.178.67"
+// #define SERVER_IP_ADDRESS           STRINGIFY(_MQTT_SRV_IP)
 #define PORT_NUMBER 1883
 #define SECURED_PORT_NUMBER 8883
 #define LOOPBACK_PORT 1882
@@ -171,7 +167,7 @@ extern MQTT_DeviceNetServices_t MQTTClient_net;
 #define SUBSCRIPTION_TOPIC0 "/lcy/To/cc3120"
 #define SUBSCRIPTION_TOPIC1 "/lcy/cc3120/LED1"
 #define SUBSCRIPTION_TOPIC2 "/lcy/cc3120/LED2"
-#define SUBSCRIPTION_TOPIC3 "/lcy/cc3120/report" // 的接收到report时，就通sys发送自已的ip与LED的状态。
+#define SUBSCRIPTION_TOPIC3 "/lcy/cc3120/report"
 
 /* Defining Publish Topic Values                                             */
 #define PUBLISH_TOPIC0 "/lcy/cc3120/sw2"
@@ -180,8 +176,8 @@ extern MQTT_DeviceNetServices_t MQTTClient_net;
 #define PUBLISH_BMP180 "/lcy/cc3120/bmp180"
 #define PUBLISH_SR501 "/lcy/cc3120/sr501"
 #define PUBLISH_SYSINFO "/lcy/cc3120/sys"
-#define PUBLISH_BLE_STR "/lcy/cc3120/ble_str" // 接收从APP的蓝牙接到的字符。
-#define PUBLISH_BLE_RGB "/lcy/cc3120/ble_rgb" // 接收从APP的蓝牙接到的RGB值。
+#define PUBLISH_BLE_STR "/lcy/cc3120/ble_str"
+#define PUBLISH_BLE_RGB "/lcy/cc3120/ble_rgb"
 
 /* Spawn task priority and Task and Thread Stack Size                        */
 #define TASKSTACKSIZE 2048
@@ -217,7 +213,7 @@ extern MQTT_DeviceNetServices_t MQTTClient_net;
 //                      LOCAL FUNCTION PROTOTYPES
 //*****************************************************************************
 void pushButtonInterruptHandler2(uint_least8_t index);
-//void HCSR501_InterruptHandler2(uint_least8_t index);
+// void HCSR501_InterruptHandler2(uint_least8_t index);
 void pushButtonInterruptHandler3(uint_least8_t index);
 void TimerPeriodicIntHandler(sigval val);
 void LedTimerConfigNStart();
@@ -259,8 +255,8 @@ SlWlanSecParams_t SecurityParams = {0};
 char ClientId[13] = {'\0'};
 
 /* Client User Name and Password                                             */
-const char *ClientUsername = "cc3200";
-const char *ClientPassword = "e401y";
+const char *ClientUsername = STRINGIFY(_MQTT_USER);
+const char *ClientPassword = STRINGIFY(_MQTT_PWD);
 
 /* Subscription topics and qos values                                        */
 char *topic[SUBSCRIPTION_TOPIC_COUNT] =
@@ -295,16 +291,14 @@ timer_t g_timer;
 /* Printing new line                                                         */
 char lineBreak[] = "\r\n";
 
-// 用于获取本的外网IP。
+/* This function is to obtain your own public network IP address. */
 extern const void *httpsTask(void *arg0);
 static SlNetSock_InAddr_t addr;
 
-/* 读取要HMC5583L的线程 */
 pthread_t hmcThread = (pthread_t)NULL;
 
-// 检测HMC线程的变量
 volatile bool hmcQueueFull = false;
-volatile int  hmcCount=0;
+volatile int hmcCount = 0;
 
 //*****************************************************************************
 //                 Banner VARIABLES
@@ -343,8 +337,7 @@ MQTTClient_ConnParams Mqtt_ClientCtx =
         CLIENT_NUM_SECURE_FILES,
         Mqtt_Client_secure_files};
 
-void setTime()
-{
+void setTime() {
     SlDateTime_t dateTime = {0};
     dateTime.tm_day = (uint32_t)DAY;
     dateTime.tm_mon = (uint32_t)MONTH;
@@ -359,8 +352,12 @@ void setTime()
 #else
 MQTTClient_ConnParams Mqtt_ClientCtx =
     {
+
+#ifdef _USE_IPV6
+        MQTTCLIENT_NETCONN_IP6,
+#else
         MQTTCLIENT_NETCONN_URL,
-//        MQTTCLIENT_NETCONN_IP6,
+#endif
         SERVER_ADDRESS,
         PORT_NUMBER, 0, 0, 0,
         NULL};
@@ -389,18 +386,15 @@ MQTTClient_Will will_param =
 //! \return 0 on success, -1 on error
 //
 //*****************************************************************************
-int32_t MQTT_SendMsgToQueue(struct msgQueue *queueElement)
-{
+int32_t MQTT_SendMsgToQueue(struct msgQueue *queueElement) {
     struct timespec abstime = {0};
 
     clock_gettime(CLOCK_REALTIME, &abstime);
 
-    if (g_PBQueue)
-    {
+    if (g_PBQueue) {
         /* send message to the queue                                        */
         if (mq_timedsend(g_PBQueue, (char *)queueElement,
-                         sizeof(struct msgQueue), 0, &abstime) == 0)
-        {
+                         sizeof(struct msgQueue), 0, &abstime) == 0) {
             return (0);
         }
     }
@@ -418,8 +412,7 @@ int32_t MQTT_SendMsgToQueue(struct msgQueue *queueElement)
 //! return none
 //
 //*****************************************************************************
-void pushButtonInterruptHandler2(uint_least8_t index)
-{
+void pushButtonInterruptHandler2(uint_least8_t index) {
     struct msgQueue queueElement;
 
     /* Disable the SW2 interrupt */
@@ -429,49 +422,10 @@ void pushButtonInterruptHandler2(uint_least8_t index)
     queueElement.msgPtr = NULL;
 
     /* write message indicating publish message                             */
-    if (MQTT_SendMsgToQueue(&queueElement))
-    {
+    if (MQTT_SendMsgToQueue(&queueElement)) {
         UART_PRINT("\r\nQueue is full\\r\n");
     }
 }
-
-//**
-// 这里是 HC-SR501为中断源的，中断回调函数。
-//void HCSR501_InterruptHandler2(uint_least8_t index)
-//{
-//    struct msgQueue queueElement;
-//
-//    /* Disable the SW2 interrupt */
-////    GPIO_disableInt(Board_GPIO_BUTTON0); // SW2
-//    printf("HCSR501_InterruptHandler2 \r\n");
-////    GPIOIntClear(GPIO_PORTE_BASE, GPIO_PIN_1);
-//
-////    GPIO_disableInt(Board_GPIO_PE1); // 关中断；
-//
-//    /*
-//     * 单次检测模式传感器检测到移动，输出高电平后，延迟时间段一结束，输出自动从高电平变成低电平。
-//     * 连续检测模式
-//     * 传感器检测到移动，输出高电平后，如果人体继续在检测范围内移动，传感器一直保持高电平，知道人离开后才延迟将高电平变为低电平。
-//     * 区别两种检测模式的区别，就在检测移动触发后，人体若继续移动，是否持续输出高电平。
-//     *
-//     * */
-//
-//    queueElement.event = PUSLISH_SR501_INT;
-//    *(char *)queueElement.msgPtr = 31;
-//
-//    /* write message indicating publish message                             */
-//    if(MQTT_SendMsgToQueue(&queueElement))
-//    {
-//       UART_PRINT("Queue is full\\r\n");
-//    }
-//
-//    while(!GPIOPinRead(GPIO_PORTE_BASE, GPIO_PIN_1));//等待电平下降再发一次消信。
-//    *(char *)queueElement.msgPtr = 30;
-//    if(MQTT_SendMsgToQueue(&queueElement))
-//    {
-//       UART_PRINT("Queue is full\\r\n");
-//    }
-//}
 
 //*****************************************************************************
 //
@@ -484,8 +438,7 @@ void pushButtonInterruptHandler2(uint_least8_t index)
 //! return none
 //
 //*****************************************************************************
-void pushButtonInterruptHandler3(uint_least8_t index)
-{
+void pushButtonInterruptHandler3(uint_least8_t index) {
     struct msgQueue queueElement;
     struct msgQueue queueElemRecv;
 
@@ -493,8 +446,7 @@ void pushButtonInterruptHandler3(uint_least8_t index)
     queueElement.msgPtr = NULL;
 
     /* write message indicating disconnect push button pressed message      */
-    if (MQTT_SendMsgToQueue(&queueElement))
-    {
+    if (MQTT_SendMsgToQueue(&queueElement)) {
         UART_PRINT(
             "Queue is full, throw first msg and send the new one\\r\n");
         mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
@@ -512,18 +464,14 @@ void pushButtonInterruptHandler3(uint_least8_t index)
 //! \return None
 //
 //*****************************************************************************
-void TimerPeriodicIntHandler(sigval val)
-{
+void TimerPeriodicIntHandler(sigval val) {
     /* Increment our interrupt counter.                                      */
     g_usTimerInts++;
 
-    if (!(g_usTimerInts & 0x1))
-    {
+    if (!(g_usTimerInts & 0x1)) {
         /* Turn Led Off                                                      */
         GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_OFF);
-    }
-    else
-    {
+    } else {
         /* Turn Led On                                                       */
         GPIO_write(Board_GPIO_LED0, Board_GPIO_LED_ON);
     }
@@ -539,8 +487,7 @@ void TimerPeriodicIntHandler(sigval val)
 //! return none
 //
 //*****************************************************************************
-void LedTimerConfigNStart()
-{
+void LedTimerConfigNStart() {
     struct itimerspec value;
     sigevent sev;
 
@@ -567,8 +514,7 @@ void LedTimerConfigNStart()
 //! return none
 //
 //*****************************************************************************
-void LedTimerDeinitStop()
-{
+void LedTimerDeinitStop() {
     /* Disable the LED blinking Timer as Device is connected to AP.          */
     timer_delete(g_timer);
 }
@@ -582,8 +528,7 @@ void LedTimerDeinitStop()
 //! \return none
 //!
 //*****************************************************************************
-static void DisplayBanner(char *AppName)
-{
+static void DisplayBanner(char *AppName) {
     UART_PRINT("\r\n");
     UART_PRINT("\t\t *************************************************\r\n");
     UART_PRINT("\t\t    CC32xx %s Application       \r\n", AppName);
@@ -591,8 +536,7 @@ static void DisplayBanner(char *AppName)
     UART_PRINT("\r\n");
 }
 
-void *MqttClientThread(void *pvParameters)
-{
+void *MqttClientThread(void *pvParameters) {
     struct msgQueue queueElement;
     struct msgQueue queueElemRecv;
 
@@ -602,8 +546,7 @@ void *MqttClientThread(void *pvParameters)
     queueElement.msgPtr = NULL;
 
     /*write message indicating disconnect Broker message.                   */
-    if (MQTT_SendMsgToQueue(&queueElement))
-    {
+    if (MQTT_SendMsgToQueue(&queueElement)) {
         UART_PRINT(
             "Queue is full, throw first msg and send the new one\\r\n");
         mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
@@ -616,8 +559,7 @@ void *MqttClientThread(void *pvParameters)
     return (NULL);
 }
 
-static void vTaskFunction(void *pvParameters)
-{
+static void vTaskFunction(void *pvParameters) {
     uint8_t temp = 0;
     uint8_t humi = 0;
     struct msgQueue queueElemRecv;
@@ -632,30 +574,19 @@ static void vTaskFunction(void *pvParameters)
     queueElement.event = PUBLISH_EVT_DHT11_DATA;
     queueElement.msgPtr = NULL;
     queueElement.msgPtr = &data;
-    /**
-        *  开启GPIOE使能 ,dht11 通信,这里设置DHT11的控制器的总线管脚是PE0,设置为输出模式 ,
-        *  并且只能一次 SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE)? 因为还有其它Pin脚有其它定义。
-        */
-    //    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
-    //    while (!(SysCtlPeripheralReady(SYSCTL_PERIPH_GPIOE))){}
 
-    while (gResetApplication == false)
-    {
+    while (gResetApplication == false) {
 
         data = 0;
-        /* dht11 通信*/
         temp = 0;
         humi = 0;
-        if (!DHT11_Read_Data(&temp, &humi))
-        {
+        if (!DHT11_Read_Data(&temp, &humi)) {
             data = temp << 8 | humi;
-            if (oldtemp != data)
-            {
+            if (oldtemp != data) {
                 btdata[0] = temp;
                 btdata[1] = humi;
                 DataService_setParameter(DS_DHT11_ID, sizeof(btdata), btdata);
-                if (MQTT_SendMsgToQueue(&queueElement))
-                {
+                if (MQTT_SendMsgToQueue(&queueElement)) {
                     UART_PRINT("DHT11 Queue is full\\r\n");
                     mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
                                NULL);
@@ -673,12 +604,11 @@ static void vTaskFunction(void *pvParameters)
 }
 
 /*
- * 这里的POSIX多线程参照的 SimpleLink MCU SDK User's Guide里的示例工程。
- * 位置于 <SDK_INSTALL_DIR>\examples\rtos\<board>\demos\portable directory.
+ * The POSIX multithreading reference here is a sample project in the SimpleLink MCU SDK User's Guide.
+ * at <SDK_INSTALL_DIR>\examples\rtos\<board>\demos\portable directory.
  */
 
-static void postSem(union sigval val)
-{
+static void postSem(union sigval val) {
     sem_t *sem = (sem_t *)(val.sival_ptr);
     sem_post(sem);
 }
@@ -691,15 +621,13 @@ static void postSem(union sigval val)
  *
  *  A non-zero return indicates a failure.
  */
-static int setupTimer(sem_t *sem, timer_t *timerid, time_t sec, long nsec)
-{
+static int setupTimer(sem_t *sem, timer_t *timerid, time_t sec, long nsec) {
     struct sigevent sev;
     struct itimerspec its;
     int retc;
     //  initially unlocked
     retc = sem_init(sem, 0, 0);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         return (retc);
     }
 
@@ -709,8 +637,7 @@ static int setupTimer(sem_t *sem, timer_t *timerid, time_t sec, long nsec)
     sev.sigev_notify_function = &postSem;
     sev.sigev_notify_attributes = NULL;
     retc = timer_create(CLOCK_MONOTONIC, &sev, timerid);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         return (retc);
     }
 
@@ -720,8 +647,7 @@ static int setupTimer(sem_t *sem, timer_t *timerid, time_t sec, long nsec)
     its.it_value.tv_sec = sec;
     its.it_value.tv_nsec = nsec;
     retc = timer_settime(*timerid, 0, &its, NULL);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         timer_delete(*timerid);
         return (retc);
     }
@@ -729,8 +655,7 @@ static int setupTimer(sem_t *sem, timer_t *timerid, time_t sec, long nsec)
     return (0);
 }
 
-void *vTaskBMP180(void *pvParameters)
-{
+void *vTaskBMP180(void *pvParameters) {
     char data[32] = {0};
     double ut = 0.0;
     long up = 0;
@@ -740,11 +665,8 @@ void *vTaskBMP180(void *pvParameters)
     struct msgQueue queueElement;
     queueElement.event = PUBLISH_EVT_BMP180;
 
-    while (gResetApplication == false)
-    {
-        // 测试读取BMP180
-        if(hmcCount == 6)
-        {
+    while (gResetApplication == false) {
+        if (hmcCount == 6) {
             BMP180_Init();
             BMP180Convert(&ut, &up);
             memset(data, 0, sizeof(data));
@@ -754,24 +676,22 @@ void *vTaskBMP180(void *pvParameters)
             queueElement.msgPtr = data;
             queueElement.topLen = strlen(data);
             DataService_setParameter(DS_BMP180_ID, strlen(data), data);
-//            UART_PRINT("vTaskBMP180 new DATA %s,len %d\r\n",data,strlen(data));
-            if (MQTT_SendMsgToQueue(&queueElement))
-            {
+            //            UART_PRINT("vTaskBMP180 new DATA %s,len %d\r\n",data,strlen(data));
+            if (MQTT_SendMsgToQueue(&queueElement)) {
                 UART_PRINT("vTaskBMP180 Queue is full\r\n");
                 mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
                            NULL);
             }
-            hmcCount=0;
+            hmcCount = 0;
         }
     }
     UART_PRINT("vTaskBMP180 Thread Exit!!!!\r\n");
     pthread_exit(0);
 }
 
-void *vTaskHMC5883L(void *pvParameters)
-{
+void *vTaskHMC5883L(void *pvParameters) {
 
-    // https://e2e.ti.com/blogs_/b/analogwire/archive/2015/10/15/how-to-simplify-i2c-tree-when-connecting-multiple-slaves-to-an-i2c-master
+    /* Reference https://e2e.ti.com/blogs_/b/analogwire/archive/2015/10/15/how-to-simplify-i2c-tree-when-connecting-multiple-slaves-to-an-i2c-master */
     // How to simplify I2C tree when connecting multiple slaves to an I2C master
     uint8_t data[6] = {0};
     uint32_t x, y, z, angle;
@@ -784,22 +704,17 @@ void *vTaskHMC5883L(void *pvParameters)
     queueElement.msgPtr = &data[0];
     queueElement.topLen = 6;
 
-    while (false == gResetApplication)
-    {
-        /* 测试读取 三轴 HMC5883L,因为两个器件读取I2C总线的时间间隔是不一样，所以这里采用信号量来同步，满6次触发一次读BMP。*/
+    while (false == gResetApplication) {
 
-        if(hmcCount != 6)
-        {
+        if (hmcCount != 6) {
             read_data(data, 6);
-            x = data[0] << 8 | data[1]; //Combine MSB and LSB of X Data output register
-            z = data[2] << 8 | data[3]; //Combine MSB and LSB of Z Data output register
-            y = data[4] << 8 | data[5]; //Combine MSB and LSB of Y Data output register
+            x = data[0] << 8 | data[1]; // Combine MSB and LSB of X Data output register
+            z = data[2] << 8 | data[3]; // Combine MSB and LSB of Z Data output register
+            y = data[4] << 8 | data[5]; // Combine MSB and LSB of Y Data output register
 
             angle = atan2((double)y, (double)x) * (180 / 3.14159265) + 180; // angle in degrees
             DataService_setParameter(DS_HMC5883L_ID, 6, data);
-            /* UART_PRINT("Read HMC5883L data %x%x%x \r\n",data[0],data[1],data[2]); */
-            if (MQTT_SendMsgToQueue(&queueElement))
-            {
+            if (MQTT_SendMsgToQueue(&queueElement)) {
                 UART_PRINT("HMC5883L Queue is full\r\n");
                 mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
                            NULL);
@@ -813,73 +728,62 @@ void *vTaskHMC5883L(void *pvParameters)
     pthread_exit(0);
 }
 
-void start_sub_threads()
-{
+void start_sub_threads() {
     pthread_t thread;
     uint8_t retc = 0;
     pthread_attr_t attrs;
     struct sched_param priParam;
 
     /*
-     * 初始化I2C总线的互斥量。
-     * https://processors.wiki.ti.com/index.php/I2C_Tips 关于后面提到的多线程访问I2C总线问题非常有用。
-     * 这里是使用要互斥量来获取I2C总线的使用。不知为何value设置0时，sem_wait会一直冻结。
+     * Initialize the mutex of the I2C bus.
+     * https://processors.wiki.ti.com/index.php/I2C_Tips
+     * Here is the use of a mutex to obtain the use of the I2C bus.
+     * I don't know why when value is set to 0, sem_wait will always freeze.
      */
     UART_PRINT("start_sub_threads >>>  \r\n");
-//    retc = pthread_mutex_init(&I2CMutex, NULL);
-    if (retc != 0)
-    {
+    //    retc = pthread_mutex_init(&I2CMutex, NULL);
+    if (retc != 0) {
         UART_PRINT(" pthread_mutex_init is failed\r\n");
         /* pthread_mutex_init() failed */
-        while (1)
-        {
+        while (1) {
         }
     }
 
     pthread_attr_init(&attrs);
 
     /* Set priority, detach state, and stack size attributes */
-    priParam.sched_priority = 2; /* 数字越大，优先级越高。 */
+    priParam.sched_priority = 2; /* The higher the number, the higher the priority. */
     retc = pthread_attr_setschedparam(&attrs, &priParam);
     retc |= pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
     retc |= pthread_attr_setstacksize(&attrs, SUBTHREADSIZE);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         UART_PRINT(" pthread_attr_setstacksize is failed\r\n");
         /* failed to set attributes */
-        while (1)
-        {
+        while (1) {
         }
     }
 
-    /* 读取HMC5883L数据线程 */
     retc = pthread_create(&thread, &attrs, vTaskHMC5883L, NULL);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         UART_PRINT(" hread_create(&thread, &attrs, vTaskHMC5883L, NULL); is failed\r\n");
         /* pthread_create() failed */
-        while (1)
-        {
+        while (1) {
         }
     }
-
 
     priParam.sched_priority = 1;
     retc = pthread_attr_setschedparam(&attrs, &priParam);
     if (retc != 0) {
         /* failed to set priority */
-        while (1) {}
+        while (1) {
+        }
     }
 
-    /* 读取BMP180数据线程 */
-
     retc = pthread_create(&thread, &attrs, vTaskBMP180, NULL);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         UART_PRINT("create(&thread, &attrs, vTaskBMP180, NULL); is failed\r\n");
         /* pthread_create() failed */
-        while (1)
-        {
+        while (1) {
         }
     }
 
@@ -887,7 +791,6 @@ void start_sub_threads()
      *  Let's make the temperature thread a higher priority .
      *  Higher number means higher priority in FreeRTOS.
      */
-
 }
 
 //*****************************************************************************
@@ -906,13 +809,12 @@ void start_sub_threads()
 //! \return None
 //!
 //*****************************************************************************
-void *MqttClient(void *pvParameters)
-{
+void *MqttClient(void *pvParameters) {
     struct msgQueue queueElemRecv;
     long lRetVal = -1;
     char *tmpBuff;
     uint32_t retc;
-    // 后面5B是时间戳
+    // append 5B timestamp.
     char ipAddr[SLNETSOCK_INET_ADDRSTRLEN + 5];
     uint8_t addrLen = 0;
     char btnMsg[8] = {'S', 'W', '2', ':', 0, 0, 0, 0};
@@ -921,11 +823,9 @@ void *MqttClient(void *pvParameters)
     memset(ipAddr, 0, SLNETSOCK_INET_ADDRSTRLEN + 5);
 
     /*Initializing Client and Subscribing to the Broker.                     */
-    if (gApConnectionState >= 0)
-    {
+    if (gApConnectionState >= 0) {
         lRetVal = MqttClient_start();
-        if (0 > lRetVal)
-        {
+        if (0 > lRetVal) {
             UART_PRINT("MQTT Client lib initialization failed\r\n");
             pthread_exit(0);
             return (NULL);
@@ -941,15 +841,13 @@ void *MqttClient(void *pvParameters)
     /*client) OR msg received by the client from the remote broker (need to  */
     /*be sent to the server to see if any local client has subscribed on the */
     /*same topic).                                                           */
-    for (;;)
-    {
+    for (;;) {
 
         /*waiting for signals                                                */
         mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
                    NULL);
 
-        switch (queueElemRecv.event)
-        {
+        switch (queueElemRecv.event) {
         case PUBLISH_PUSH_BUTTON_PRESSED:
             /* get current time (relative to POSIX Epoch) */
             //            timestamp =time(&ts);
@@ -966,12 +864,6 @@ void *MqttClient(void *pvParameters)
             time(&ts);
             UART_PRINT("Current date time : %s\r\n", ctime(&ts));
             UART_PRINT("Topic: %s\r\n", publish_topic);
-            //            UART_PRINT("timestamp %u \r\n", ts.tv_sec);
-
-            /* Clear and enable again the SW2 interrupt */
-            //            GPIO_clearInt(Board_GPIO_BUTTON0);  // SW2
-            //            GPIO_enableInt(Board_GPIO_BUTTON0); // SW2
-
             break;
         case PUBLISH_EVT_SR501_INT:
 
@@ -1009,8 +901,7 @@ void *MqttClient(void *pvParameters)
         /*subscribed by local client)                                */
         case MSG_RECV_BY_CLIENT:
             tmpBuff = (char *)((char *)queueElemRecv.msgPtr + 12);
-            if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC0, queueElemRecv.topLen) == 0)
-            {
+            if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC0, queueElemRecv.topLen) == 0) {
                 // pushlich to sys
                 lRetVal =
                     MQTTClient_publish(gMqttClient, (char *)publish_topic, strlen((char *)publish_topic),
@@ -1019,26 +910,16 @@ void *MqttClient(void *pvParameters)
 
                 UART_PRINT("CC3200 Publishes the following message \r\n");
                 UART_PRINT("Topic: %s\r\n", publish_topic);
-            }
-            else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC1, queueElemRecv.topLen) == 0)
-            {
-                //                GPIO_toggle(Board_GPIO_LED0);
-                // 为什么要偏移29，因为在MqttClientCallback它就是这样封装的。
+            } else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC1, queueElemRecv.topLen) == 0) {
+                /* Why is the offset 29? Because it is encapsulated in MqttClientCallback. */
                 GPIO_write(Board_LED0, *(char *)((char *)queueElemRecv.msgPtr + 29) == 0x31 ? Board_LED_ON : Board_LED_OFF);
-            }
-            else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC2,
-                             queueElemRecv.topLen) == 0)
-            {
-                //                GPIO_toggle(Board_GPIO_LED1);
-                // 为什么要偏移29，因为在MqttClientCallback它就是这样封装的。
+            } else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC2,
+                               queueElemRecv.topLen) == 0) {
                 GPIO_write(Board_LED1, *(char *)((char *)queueElemRecv.msgPtr + 29) == 0x31 ? Board_LED_ON : Board_LED_OFF);
-            }
-            else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC3,
-                             queueElemRecv.topLen) == 0)
-            {
-                /* 发送IP */
+            } else if (strncmp(tmpBuff, SUBSCRIPTION_TOPIC3,
+                               queueElemRecv.topLen) == 0) {
+                /* Send ip address */
                 SlNetUtil_inetNtop(SLNETSOCK_AF_INET, (SlNetSock_InAddr_t *)pvParameters, (char *)ipAddr, SLNETSOCK_INET_ADDRSTRLEN);
-                //                UART_PRINT("\n\r self ip %s \r\n", ipAddr);
                 clock_gettime(CLOCK_REALTIME, &ts);
                 addrLen = strlen((char *)ipAddr);
                 ipAddr[addrLen] = ':';
@@ -1049,22 +930,17 @@ void *MqttClient(void *pvParameters)
                 lRetVal =
                     MQTTClient_publish(gMqttClient, (char *)PUBLISH_SYSINFO, strlen((char *)PUBLISH_SYSINFO),
                                        (char *)ipAddr, strlen((char *)ipAddr), MQTT_QOS_0);
-
-                //                UART_PRINT("Topic: %s\r\n", PUBLISH_SYSINFO);
             }
 
             free(queueElemRecv.msgPtr);
             break;
 
-        /* 接收到来自蓝牙端的字符消息。 */
         case PUBLISH_EVT_BLE_STR:
             lRetVal =
                 MQTTClient_publish(gMqttClient, (char *)publish_ble_str_topic, strlen((char *)publish_ble_str_topic),
                                    (char *)queueElemRecv.msgPtr,
                                    queueElemRecv.topLen, MQTT_QOS_0);
-            //            UART_PRINT("Ble STR data: %s\r\n", queueElemRecv.msgPtr);
             break;
-            /* 接收到来自蓝牙端的RGB消息。 */
         case PUBLISH_EVT_BLE_RGB:
             lRetVal =
                 MQTTClient_publish(gMqttClient, (char *)publish_ble_rgb_topic, strlen((char *)publish_ble_rgb_topic),
@@ -1110,8 +986,7 @@ void *MqttClient(void *pvParameters)
 //! \return None
 //!
 //*****************************************************************************
-int32_t Mqtt_IF_Connect()
-{
+int32_t Mqtt_IF_Connect() {
     int32_t lRetVal, retc;
     char SSID_Remote_Name[32];
     int8_t Str_Length;
@@ -1123,8 +998,7 @@ int32_t Mqtt_IF_Connect()
     memset(SSID_Remote_Name, '\0', sizeof(SSID_Remote_Name));
     Str_Length = strlen(SSID_NAME);
 
-    if (Str_Length)
-    {
+    if (Str_Length) {
         /*Copy the Default SSID to the local variable                        */
         strncpy(SSID_Remote_Name, SSID_NAME, Str_Length);
     }
@@ -1140,8 +1014,7 @@ int32_t Mqtt_IF_Connect()
 
     /*Start the driver                                                       */
     lRetVal = Network_IF_InitDriver(ROLE_STA);
-    if (lRetVal < 0)
-    {
+    if (lRetVal < 0) {
         UART_PRINT("Failed to start SimpleLink Device\r\n", lRetVal);
         return (-1);
     }
@@ -1158,8 +1031,7 @@ int32_t Mqtt_IF_Connect()
 
     /*Connect to the Access Point                                            */
     lRetVal = Network_IF_ConnectAP(SSID_Remote_Name, SecurityParams);
-    if (lRetVal < 0)
-    {
+    if (lRetVal < 0) {
         UART_PRINT("Connection to an AP failed\r\n");
         return (-1);
     }
@@ -1191,8 +1063,7 @@ int32_t Mqtt_IF_Connect()
 //! \return None
 //!
 //*****************************************************************************
-void Mqtt_start()
-{
+void Mqtt_start() {
     int32_t threadArg = 100;
     pthread_attr_t pAttrs;
     struct sched_param priParam;
@@ -1206,8 +1077,7 @@ void Mqtt_start()
     attr.mq_msgsize = sizeof(struct msgQueue);
     g_PBQueue = mq_open("g_PBQueue", O_CREAT, mode, &attr);
 
-    if (g_PBQueue == NULL)
-    {
+    if (g_PBQueue == NULL) {
         UART_PRINT("MQTT Message Queue create fail\r\n");
         gInitState &= ~MQTT_INIT_STATE;
         return;
@@ -1215,27 +1085,28 @@ void Mqtt_start()
 
     /*Set priority and stack size attributes                                 */
     pthread_attr_init(&pAttrs);
-    // 数字越大，优先级越高。这里的MqttClient线程与蓝牙的线程的优先不能低于其它的，否则可能运行不正常。
+    /**
+     * The higher the number, the higher the priority.
+     * The priority of the MqttClient thread and the Bluetooth thread here cannot be lower than the others,
+     * otherwise it may not run properly.
+     * */
     priParam.sched_priority = 3;
     retc = pthread_attr_setschedparam(&pAttrs, &priParam);
     retc |= pthread_attr_setstacksize(&pAttrs, MQTTTHREADSIZE);
     retc |= pthread_attr_setdetachstate(&pAttrs, PTHREAD_CREATE_DETACHED);
 
-    if (retc != 0)
-    {
+    if (retc != 0) {
         gInitState &= ~MQTT_INIT_STATE;
         UART_PRINT("MQTT thread create fail\r\n");
         return;
     }
 
     retc = pthread_create(&mqttThread, &pAttrs, MqttClient, (void *)&addr);
-    if (retc != 0)
-    {
+    if (retc != 0) {
         gInitState &= ~MQTT_INIT_STATE;
         UART_PRINT("MQTT thread create fail\r\n");
         return;
     }
-
 
     gInitState &= ~MQTT_INIT_STATE;
 }
@@ -1251,13 +1122,11 @@ void Mqtt_start()
 //!
 //*****************************************************************************
 
-void Mqtt_Stop()
-{
+void Mqtt_Stop() {
     struct msgQueue queueElement;
     struct msgQueue queueElemRecv;
 
-    if (gApConnectionState >= 0)
-    {
+    if (gApConnectionState >= 0) {
         Mqtt_ClientStop(1);
     }
 
@@ -1265,8 +1134,7 @@ void Mqtt_Stop()
     queueElement.msgPtr = NULL;
 
     /*write message indicating publish message                               */
-    if (MQTT_SendMsgToQueue(&queueElement))
-    {
+    if (MQTT_SendMsgToQueue(&queueElement)) {
         UART_PRINT(
             "Queue is full, throw first msg and send the new one\r\n");
         mq_receive(g_PBQueue, (char *)&queueElemRecv, sizeof(struct msgQueue),
@@ -1293,33 +1161,30 @@ void Mqtt_Stop()
 //! Socket properties modified in this function are based on the options set
 //! outside the scope of this function.
 //! Returns a valid handle on success, otherwise a negative number.
-// Mqtt_createSocket 是来自官方MQTT库里的  createSocket 源码，此处重写它是为了支持IPv6.
+//! Mqtt_createSocket is the createSocket source code from the official MQTT library. It is rewritten here to support IPv6.
 //*****************************************************************************
 static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
                                  MQTT_SecureConn_t *nwSecurityOpts,
                                  const char *serverAddr,
-                                 bool isServer)
-{
+                                 bool isServer) {
     int32_t socketFd;
     int32_t status;
     uint32_t dummyVal = 1;
     SlNetSockSecAttrib_t *secAttrib;
     SlNetSockSecAttrib_e attribName;
-    //local variables for creating secure socket
+    // local variables for creating secure socket
     uint8_t SecurityMethod;
     uint32_t SecurityCypher;
 
     int8_t i;
 
-    //If TLS is required, 这里TLS安全连接，需要独立的TLS协议栈支持。
-    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_SEC) != 0)
-    {
+    /* If TLS is required, The TLS secure connection here requires independent TLS protocol stack support. */
+    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_SEC) != 0) {
         /* Create security attribute */
         secAttrib = SlNetSock_secAttribCreate();
 
         /* Check if the function failed */
-        if (NULL == secAttrib)
-        {
+        if (NULL == secAttrib) {
             return (MQTT_PACKET_ERR_ALLOC_FAILED);
         }
 
@@ -1328,8 +1193,7 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
                              SLNETSOCK_PROTO_TCP,
                              0,
                              0);
-        if (socketFd < 0)
-        {
+        if (socketFd < 0) {
             SlNetSock_secAttribDelete(secAttrib);
             return (socketFd);
         }
@@ -1342,14 +1206,12 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
            and if the address input is url address.             */
         if (((nwconnOpts &
               MQTT_DEV_NETCONN_OPT_SKIP_DOMAIN_NAME_VERIFICATION) == 0) &&
-            ((nwconnOpts & MQTT_DEV_NETCONN_OPT_URL) != 0))
-        {
+            ((nwconnOpts & MQTT_DEV_NETCONN_OPT_URL) != 0)) {
             status =
                 SlNetSock_secAttribSet(secAttrib,
                                        SLNETSOCK_SEC_ATTRIB_DOMAIN_NAME,
                                        (void *)serverAddr, strlen(serverAddr));
-            if (status < 0)
-            {
+            if (status < 0) {
                 SlNetSock_secAttribDelete(secAttrib);
                 SlNetSock_close(socketFd);
                 return (status);
@@ -1359,21 +1221,18 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
         /* Check if Skip certificate catalog verification is
            enabled.                                             */
         if ((nwconnOpts &
-             MQTT_DEV_NETCONN_OPT_SKIP_CERTIFICATE_CATALOG_VERIFICATION) != 0)
-        {
+             MQTT_DEV_NETCONN_OPT_SKIP_CERTIFICATE_CATALOG_VERIFICATION) != 0) {
             status = SlNetSock_secAttribSet(
                 secAttrib, SLNETSOCK_SEC_ATTRIB_DISABLE_CERT_STORE,
                 (void *)&dummyVal, sizeof(dummyVal));
-            if (status < 0)
-            {
+            if (status < 0) {
                 SlNetSock_secAttribDelete(secAttrib);
                 SlNetSock_close(socketFd);
                 return (status);
             }
         }
 
-        if (nwSecurityOpts->nFile < 1 || nwSecurityOpts->nFile > 4)
-        {
+        if (nwSecurityOpts->nFile < 1 || nwSecurityOpts->nFile > 4) {
             SlNetSock_secAttribDelete(secAttrib);
             SlNetSock_close(socketFd);
             /* security files missing or wrong number of security files
@@ -1381,13 +1240,12 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
             return (MQTT_PACKET_ERR_FNPARAM);
         }
 
-        //Set Socket Options that were just defined
+        // Set Socket Options that were just defined
         status =
             SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_METHOD,
                                    (void *)&(SecurityMethod),
                                    sizeof(SecurityMethod));
-        if (status < 0)
-        {
+        if (status < 0) {
             SlNetSock_secAttribDelete(secAttrib);
             SlNetSock_close(socketFd);
             return (status);
@@ -1397,41 +1255,33 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
             SlNetSock_secAttribSet(secAttrib, SLNETSOCK_SEC_ATTRIB_CIPHERS,
                                    (void *)&(SecurityCypher),
                                    sizeof(SecurityCypher));
-        if (status < 0)
-        {
+        if (status < 0) {
             SlNetSock_secAttribDelete(secAttrib);
             SlNetSock_close(socketFd);
             return (status);
         }
 
-        if (nwSecurityOpts->nFile == 1)
-        {
+        if (nwSecurityOpts->nFile == 1) {
             status =
                 SlNetSock_secAttribSet(secAttrib,
                                        SLNETSOCK_SEC_ATTRIB_PEER_ROOT_CA,
                                        (void *)nwSecurityOpts->files[0],
                                        strlen(
                                            nwSecurityOpts->files[0]));
-            if (status < 0)
-            {
+            if (status < 0) {
                 SlNetSock_secAttribDelete(secAttrib);
                 SlNetSock_close(socketFd);
                 return (status);
             }
-        }
-        else
-        {
-            for (i = 0; i < nwSecurityOpts->nFile; i++)
-            {
-                if (NULL != nwSecurityOpts->files[i])
-                {
+        } else {
+            for (i = 0; i < nwSecurityOpts->nFile; i++) {
+                if (NULL != nwSecurityOpts->files[i]) {
                     attribName =
                         (SlNetSockSecAttrib_e)(SLNETSOCK_SEC_ATTRIB_PRIVATE_KEY + i);
                     status = SlNetSock_secAttribSet(
                         secAttrib, attribName,
                         (void *)nwSecurityOpts->files[i], strlen(nwSecurityOpts->files[i]));
-                    if (status < 0)
-                    {
+                    if (status < 0) {
                         SlNetSock_secAttribDelete(secAttrib);
                         SlNetSock_close(socketFd);
                         return (status);
@@ -1440,8 +1290,7 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
             }
         }
         status = SlNetSock_startSec(socketFd, secAttrib, isServer ? (SLNETSOCK_SEC_BIND_CONTEXT_ONLY | SLNETSOCK_SEC_IS_SERVER) : SLNETSOCK_SEC_BIND_CONTEXT_ONLY);
-        if (status < 0)
-        {
+        if (status < 0) {
             SlNetSock_secAttribDelete(secAttrib);
             SlNetSock_close(socketFd);
             return (status);
@@ -1449,26 +1298,20 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
         SlNetSock_secAttribDelete(secAttrib);
     }
     // If no TLS required
-    else
-    {
+    else {
         // check to create a udp or tcp socket
-        if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_UDP) != 0)
-        {
+        if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_UDP) != 0) {
             socketFd =
                 SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_DGRAM,
                                  SLNETSOCK_PROTO_UDP,
                                  0,
                                  0);
-        }
-        else if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_IP6) != 0)
-        {
-            // 重写让它支持IPv6
+        } else if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_IP6) != 0) {
             socketFd =
                 SlNetSock_create(SLNETSOCK_AF_INET6, SLNETSOCK_SOCK_STREAM,
                                  SLNETSOCK_PROTO_TCP, 0,
                                  0); // consider putting 0 in place of SLNETSOCK_PROTO_TCP
-        }
-        else // socket for tcp
+        } else                       // socket for tcp
         {
             socketFd =
                 SlNetSock_create(SLNETSOCK_AF_INET, SLNETSOCK_SOCK_STREAM,
@@ -1483,12 +1326,11 @@ static int32_t Mqtt_createSocket(uint32_t nwconnOpts,
 /*
  *  ======== getAddrByName ========
  *  Retrieve host IP address corresponding to a host name
- *  来源于 ti/net/sntp/sntp.c
+ *  Came from ti/net/sntp/sntp.c
  */
 static int32_t getAddrByName(const char *name,
                              uint32_t *addr,
-                             uint16_t *family)
-{
+                             uint16_t *family) {
 
     int32_t ifID;
     int32_t i;
@@ -1497,23 +1339,19 @@ static int32_t getAddrByName(const char *name,
 
     /* Query DNS for IPv4 address. */
     ifID = SlNetUtil_getHostByName(0, (char *)name, strlen(name), addr, &addrLen, SLNETSOCK_AF_INET);
-    if (ifID < 0)
-    {
+    if (ifID < 0) {
         addrLen = SLNETUTIL_DNSBUFSIZE / sizeof(SlNetSock_In6Addr_t);
 
-                ifID = SlNetUtil_getHostByName(0, (char *)name, strlen(name), addr, &addrLen, SLNETSOCK_AF_INET6);
-//        ifID = sl_NetAppDnsGetHostByName((char *)name, strlen(name), addr, SL_AF_INET6);
+        ifID = SlNetUtil_getHostByName(0, (char *)name, strlen(name), addr, &addrLen, SLNETSOCK_AF_INET6);
+        //        ifID = sl_NetAppDnsGetHostByName((char *)name, strlen(name), addr, SL_AF_INET6);
 
-        if (ifID < 0)
-        {
+        if (ifID < 0) {
             /* return an error */
             UART_PRINT("sl_NetAppDnsGetHostByName error %d\r\n", ifID);
             return (-1);
         }
         *family = SLNETSOCK_AF_INET6;
-    }
-    else
-    {
+    } else {
         *family = SLNETSOCK_AF_INET;
     }
 
@@ -1521,20 +1359,22 @@ static int32_t getAddrByName(const char *name,
     return (ifID);
 }
 
+
+#ifdef _USE_IPV6
 //*****************************************************************************
 //
 //! \brief  Open a TCP socket with required properties
 //! Also connect to the server.
 //! Returns a valid handle on success, NULL on failure.
-// MQTTNet46_commOpen 是来自官方MQTT库里的源码 ti/net/mqtt/platform/mqtt_net_func.c 里的MQTTNet_commOpen，此处重写它是为了支持IPv6.
-// SINetIfWiFi 网络栈目前版本是不支持IPv6.只有SINetIfNDK(Ethernet)是支持IPv6
+//! MQTTNet46_commOpen is MQTTNet_commOpen from the source code ti/net/mqtt/platform/mqtt_net_func.c in the official MQTT library.
+//! It is rewritten here to support IPv6.
+//! The current version of SINetIfWiFi network stack does not support IPv6. Only SINetIfNDK (Ethernet) supports IPv6
 //
 //*****************************************************************************
 static int32_t MQTTNet46_commOpen(uint32_t nwconnOpts,
                                   const char *serverStr,
                                   uint16_t portNumber,
-                                  const MQTT_SecureConn_t *nwSecurity)
-{
+                                  const MQTT_SecureConn_t *nwSecurity) {
     int32_t socketFd, status, ifID;
     SlNetSock_AddrIn6_t serverAddr;
     int32_t srvAddrSize;
@@ -1542,9 +1382,8 @@ static int32_t MQTTNet46_commOpen(uint32_t nwconnOpts,
     uint16_t family;
     uint32_t nOpts = nwconnOpts;
 
-    // 此处代码参考 SDK ti/net/sntp/sntp.c
-    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_URL) != 0)
-    {
+    // Code reference SDK ti/net/sntp/sntp.c
+    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_URL) != 0) {
         memset(&uiIP, 0, sizeof(uiIP));
         ifID = getAddrByName(serverStr, uiIP, &family);
     }
@@ -1554,32 +1393,27 @@ static int32_t MQTTNet46_commOpen(uint32_t nwconnOpts,
         Mqtt_createSocket(family == SLNETSOCK_AF_INET6 ? nOpts | MQTT_DEV_NETCONN_OPT_IP6 : nOpts,
                           (MQTT_SecureConn_t *)nwSecurity, serverStr,
                           false);
-    if (socketFd < 0)
-    {
+    if (socketFd < 0) {
         /* ERROR: Could not create a socket */
         UART_PRINT("RROR: Could not create a socket failed\r\n");
         return (socketFd);
     }
 
-    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_UDP) != 0)
-    {
-        //filling the UDP server socket address
+    if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_UDP) != 0) {
+        // filling the UDP server socket address
         ((SlNetSock_AddrIn_t *)&serverAddr)->sin_addr.s_addr = 0;
 
         status = SlNetSock_bind(socketFd, (SlNetSock_Addr_t *)&serverAddr,
                                 srvAddrSize);
-        if (status < 0)
-        {
+        if (status < 0) {
             // error
             SlNetSock_close(socketFd);
             return (status);
         }
-    }
-    else
-    {
+    } else {
 
         // do tcp connect map SlNetIfWifi_connect --> sl_Connect
-        // 通过仔细查看SDK的文档，调用关系是 SlNetSock_connect --> SlNetIfWifi_connect --> sl_Connect。
+        /* By carefully looking at the SDK documentation, the calling relationship is SlNetSock_connect --> SlNetIfWifi_connect --> sl_Connect. */
 
         serverAddr.sin6_family = family;
         serverAddr.sin6_port = SlNetUtil_htons(portNumber);
@@ -1602,35 +1436,30 @@ static int32_t MQTTNet46_commOpen(uint32_t nwconnOpts,
         status = SlNetSock_connect(socketFd, (SlNetSock_Addr_t *)&serverAddr,
                                    srvAddrSize);
 
-        if (status < 0)
-        {
+        if (status < 0) {
             /* ERROR: SlNetSock_connect failed */
 
             if ((SLNETERR_ESEC_SNO_VERIFY != status) ||
                 ((SLNETERR_ESEC_DATE_ERROR != status) &&
-                 (nwconnOpts & MQTT_DEV_NETCONN_OPT_SKIP_DATE_VERIFICATION)))
-            {
+                 (nwconnOpts & MQTT_DEV_NETCONN_OPT_SKIP_DATE_VERIFICATION))) {
                 UART_PRINT("Ipv6 Server ERROR: Could not establish connection to server, Closing the socket\r\n");
                 /* ERROR: Could not establish connection to server, Closing the socket */
                 SlNetSock_close(socketFd);
                 return (status);
             }
 
-            if (status == SLNETERR_BSD_ECONNREFUSED)
-            {
-                /* 注意：检查服务器是否可以其它客户端连接，是否启动？中间是否有防墙。 */
+            if (status == SLNETERR_BSD_ECONNREFUSED) {
+                /* Note: Check whether the server can be connected by other clients. Is it started? Is there a defense wall in the middle? */
             }
             // else - SLNETERR_ESEC_SNO_VERIFY == status or SLNETERR_ESEC_DATE_ERROR == status
             /* ERROR: Could not establish secure connection to server,
                Continuing with unsecured connection to server */
         }
 
-        if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_SEC) != 0)
-        {
+        if ((nwconnOpts & MQTT_DEV_NETCONN_OPT_SEC) != 0) {
             status = SlNetSock_startSec(
                 socketFd, NULL, SLNETSOCK_SEC_START_SECURITY_SESSION_ONLY);
-            if (status < 0)
-            {
+            if (status < 0) {
                 SlNetSock_close(socketFd);
                 return (status);
             }
@@ -1641,9 +1470,9 @@ static int32_t MQTTNet46_commOpen(uint32_t nwconnOpts,
 
     return (socketFd);
 }
+#endif
 
-int32_t MqttClient_start()
-{
+int32_t MqttClient_start() {
     int32_t lRetVal = -1;
     int32_t iCount = 0;
 
@@ -1657,14 +1486,15 @@ int32_t MqttClient_start()
     MqttClientExmple_params.blockingSend = true;
 
     gInitState |= CLIENT_INIT_STATE;
-    // 重新指定一个函数,让它支持IPv6.
+#ifdef _USE_IPV6
+    UART_PRINT("Use IPv6 stack.\r\n");
     MQTTClient_net.open = MQTTNet46_commOpen;
+#endif
     /*Initialize MQTT client lib                                             */
     gMqttClient = MQTTClient_create(MqttClientCallback,
                                     &MqttClientExmple_params);
 
-    if (gMqttClient == NULL)
-    {
+    if (gMqttClient == NULL) {
         /*lib initialization failed                                          */
         gInitState &= ~CLIENT_INIT_STATE;
         UART_PRINT("lib initialization failed\r\n");
@@ -1681,8 +1511,7 @@ int32_t MqttClient_start()
     lRetVal |=
         pthread_create(&g_rx_task_hndl, &pAttrs, MqttClientThread,
                        (void *)&threadArg);
-    if (lRetVal != 0)
-    {
+    if (lRetVal != 0) {
         UART_PRINT("Client Thread Create Failed failed\r\n");
         gInitState &= ~CLIENT_INIT_STATE;
         return (-1);
@@ -1707,8 +1536,7 @@ int32_t MqttClient_start()
                        (char *)ClientPassword));
 #endif
     /*Initiate MQTT Connect                                                  */
-    if (gApConnectionState >= 0)
-    {
+    if (gApConnectionState >= 0) {
 #if CLEAN_SESSION == false
         bool clean = CLEAN_SESSION;
         MQTTClient_set(gMqttClient, MQTTClient_CLEAN_CONNECT, (void *)&clean,
@@ -1722,41 +1550,32 @@ int32_t MqttClient_start()
            0 means connection successful without session stored by the server,
            greater than 0 means successful connection with session stored by
            the server */
-        if (0 > lRetVal)
-        {
+        if (0 > lRetVal) {
             /*lib initialization failed                                      */
             UART_PRINT("Connection to broker failed, Error code: %d\r\n",
                        lRetVal);
 
             gUiConnFlag = 0;
-        }
-        else
-        {
+        } else {
             gUiConnFlag = 1;
         }
         /*Subscribe to topics when session is not stored by the server       */
-        if ((gUiConnFlag == 1) && (0 == lRetVal))
-        {
+        if ((gUiConnFlag == 1) && (0 == lRetVal)) {
             uint8_t subIndex;
             MQTTClient_SubscribeParams subscriptionInfo[SUBSCRIPTION_TOPIC_COUNT];
 
-            for (subIndex = 0; subIndex < SUBSCRIPTION_TOPIC_COUNT; subIndex++)
-            {
+            for (subIndex = 0; subIndex < SUBSCRIPTION_TOPIC_COUNT; subIndex++) {
                 subscriptionInfo[subIndex].topic = topic[subIndex];
                 subscriptionInfo[subIndex].qos = qos[subIndex];
             }
 
             if (MQTTClient_subscribe(gMqttClient, subscriptionInfo,
-                                     SUBSCRIPTION_TOPIC_COUNT) < 0)
-            {
+                                     SUBSCRIPTION_TOPIC_COUNT) < 0) {
                 UART_PRINT("Subscription Error \r\n");
                 MQTTClient_disconnect(gMqttClient);
                 gUiConnFlag = 0;
-            }
-            else
-            {
-                for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++)
-                {
+            } else {
+                for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++) {
                     UART_PRINT("Client subscribed on %s\r\n,", topic[iCount]);
                 }
             }
@@ -1779,21 +1598,18 @@ int32_t MqttClient_start()
 //!
 //*****************************************************************************
 
-void Mqtt_ClientStop(uint8_t disconnect)
-{
+void Mqtt_ClientStop(uint8_t disconnect) {
     uint32_t iCount;
 
     MQTTClient_UnsubscribeParams subscriptionInfo[SUBSCRIPTION_TOPIC_COUNT];
 
-    for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++)
-    {
+    for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++) {
         subscriptionInfo[iCount].topic = topic[iCount];
     }
 
     MQTTClient_unsubscribe(gMqttClient, subscriptionInfo,
                            SUBSCRIPTION_TOPIC_COUNT);
-    for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++)
-    {
+    for (iCount = 0; iCount < SUBSCRIPTION_TOPIC_COUNT; iCount++) {
         UART_PRINT("Unsubscribed from the topic %s\r\n", topic[iCount]);
     }
     gUiConnFlag = 0;
@@ -1814,12 +1630,10 @@ void Mqtt_ClientStop(uint8_t disconnect)
 //*****************************************************************************
 
 void printBorder(char ch,
-                 int n)
-{
+                 int n) {
     int i = 0;
 
-    for (i = 0; i < n; i++)
-    {
+    for (i = 0; i < n; i++) {
         putch(ch);
     }
 }
@@ -1836,43 +1650,34 @@ void printBorder(char ch,
 //! \return void.
 //!
 //*****************************************************************************
-void SetClientIdNamefromMacAddress(uint8_t *macAddress)
-{
+void SetClientIdNamefromMacAddress(uint8_t *macAddress) {
     uint8_t Client_Mac_Name[2];
     uint8_t Index;
 
     /*When ClientID isn't set, use the mac address as ClientID               */
-    if (ClientId[0] == '\0')
-    {
+    if (ClientId[0] == '\0') {
         /*6 bytes is the length of the mac address                           */
-        for (Index = 0; Index < SL_MAC_ADDR_LEN; Index++)
-        {
+        for (Index = 0; Index < SL_MAC_ADDR_LEN; Index++) {
             /*Each mac address byte contains two hexadecimal characters      */
             /*Copy the 4 MSB - the most significant character                */
             Client_Mac_Name[0] = (macAddress[Index] >> 4) & 0xf;
             /*Copy the 4 LSB - the least significant character               */
             Client_Mac_Name[1] = macAddress[Index] & 0xf;
 
-            if (Client_Mac_Name[0] > 9)
-            {
+            if (Client_Mac_Name[0] > 9) {
                 /*Converts and copies from number that is greater than 9 in  */
                 /*hexadecimal representation (a to f) into ascii character   */
                 ClientId[2 * Index] = Client_Mac_Name[0] + 'a' - 10;
-            }
-            else
-            {
+            } else {
                 /*Converts and copies from number 0 - 9 in hexadecimal       */
                 /*representation into ascii character                        */
                 ClientId[2 * Index] = Client_Mac_Name[0] + '0';
             }
-            if (Client_Mac_Name[1] > 9)
-            {
+            if (Client_Mac_Name[1] > 9) {
                 /*Converts and copies from number that is greater than 9 in  */
                 /*hexadecimal representation (a to f) into ascii character   */
                 ClientId[2 * Index + 1] = Client_Mac_Name[1] + 'a' - 10;
-            }
-            else
-            {
+            } else {
                 /*Converts and copies from number 0 - 9 in hexadecimal       */
                 /*representation into ascii character                        */
                 ClientId[2 * Index + 1] = Client_Mac_Name[1] + '0';
@@ -1893,8 +1698,7 @@ void SetClientIdNamefromMacAddress(uint8_t *macAddress)
 //*****************************************************************************
 
 int32_t DisplayAppBanner(char *appName,
-                         char *appVersion)
-{
+                         char *appVersion) {
     int32_t ret = 0;
     uint8_t macAddress[SL_MAC_ADDR_LEN];
     uint16_t macAddressLen = SL_MAC_ADDR_LEN;
@@ -1956,8 +1760,7 @@ int32_t DisplayAppBanner(char *appName,
     return (ret);
 }
 
-void mainThread(void *args)
-{
+void mainThread(void *args) {
 
     uint32_t count = 0;
     pthread_t spawn_thread = (pthread_t)NULL;
@@ -1966,8 +1769,8 @@ void mainThread(void *args)
     UART_Handle tUartHndl;
 
     int32_t retc = 0;
-    /*Initialize SlNetSock layer with CC31xx/CC32xx interface,
-     * 这里如果是Eth网卡会是SlNetIfConfigNDK，具体详情请参考 msp432e4_sdk 源码中的NDK部分。  */
+    /* Initialize SlNetSock layer with CC31xx/CC32xx interface,
+     * If it is an Eth network card here, it will be SlNetIfConfigNDK. For details, please refer to the NDK part in the msp432e4_sdk source code.。  */
     SlNetIf_init(0);
     SlNetIf_add(SLNETIF_ID_1, "CC3120",
                 (const SlNetIf_Config_t *)&SlNetIfConfigWifi,
@@ -1989,22 +1792,18 @@ void mainThread(void *args)
 
     retc = pthread_create(&spawn_thread, &pAttrs_spawn, sl_Task, NULL);
 
-    if (retc != 0)
-    {
+    if (retc != 0) {
         UART_PRINT("could not create simplelink task\r\n");
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
 
     retc = sl_Start(0, 0, 0);
-    if (retc < 0)
-    {
+    if (retc < 0) {
         /*Handle Error */
         UART_PRINT("sl_Start failed\r\n");
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
@@ -2013,28 +1812,22 @@ void mainThread(void *args)
     retc = DisplayAppBanner(APPLICATION_NAME, APPLICATION_VERSION);
 
     retc = sl_Stop(SL_STOP_TIMEOUT);
-    if (retc < 0)
-    {
+    if (retc < 0) {
         /*Handle Error */
         UART_PRINT("sl_Stop failed\r\n");
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
 
-    if (retc < 0)
-    {
-        /*Handle Error */
+    if (retc < 0) {
         UART_PRINT("mqtt_client - Unable to retrieve device information \r\n");
-        while (1)
-        {
+        while (1) {
             ;
         }
     }
 
-    while (1)
-    {
+    while (1) {
         gResetApplication = false;
         topic[0] = SUBSCRIPTION_TOPIC0;
         topic[1] = SUBSCRIPTION_TOPIC1;
@@ -2050,21 +1843,18 @@ void mainThread(void *args)
         Mqtt_start();
 
         /*Wait for init to be completed!!!                                   */
-        while (gInitState != 0)
-        {
+        while (gInitState != 0) {
             UART_PRINT(".");
             sleep(1);
         }
         UART_PRINT(".\r\n");
 
-        while (gResetApplication == false)
-        {
+        while (gResetApplication == false) {
             ;
         }
 
         UART_PRINT("TO Complete - Closing all threads and resources\r\n");
 
-        /*Stop the MQTT Process                                              */
         Mqtt_Stop();
 
         UART_PRINT("reopen MQTT # %d  \r\n", ++count);

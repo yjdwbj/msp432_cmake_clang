@@ -1,6 +1,5 @@
 #include "sr501.h"
 
-/* 使用中断方式去处理 PE0的电平变化 */
 void HCSR501_InterruptHandler2(uint_least8_t index)
 {
     static uint8_t status = 'a';

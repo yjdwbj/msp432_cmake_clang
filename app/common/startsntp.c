@@ -42,7 +42,7 @@
  */
 #define TIME_BASEDIFF ((((uint32_t)70 * 365 + 17) * 24 * 3600))
 
-#define TIME_NTP_TO_UNIX(t) ((t) - TIME_BASEDIFF)
+#define TIME_NTP_TO_UNIX(t) ((t)-TIME_BASEDIFF)
 
 #define NTP_SERVERS 1
 #define NTP_SERVER_PORT 123
@@ -53,13 +53,10 @@
 /* Must wait at least 15 sec to retry NTP server (RFC 4330) */
 #define NTP_POLL_TIME 15
 
-
-
 /*
  *  ======== startSNTP ========
  */
-void startSNTP(void)
-{
+void startSNTP(void) {
     uint64_t ntpTimeStamp;
     uint32_t currentTimeNtp = 0;
     uint32_t currentTimeUnix = 0;
@@ -67,11 +64,11 @@ void startSNTP(void)
     time_t ts;
     SlNetSock_Timeval_t timeval;
     struct timespec tspec;
-    // 它驱动内自带的中 time.google.com 无法访问的。
-    static const char * ntpList[] = {
-                                     "cn.pool.ntp.org",
-                                     "ntp1.aliyun.com",
-                                     "ntp.ntsc.ac.cn"};
+
+    static const char *ntpList[] = {
+        "cn.pool.ntp.org",
+        "ntp1.aliyun.com",
+        "ntp.ntsc.ac.cn"};
 
     /* Set timeout value for NTP server reply */
     timeval.tv_sec = NTP_REPLY_WAIT_TIME;
@@ -79,13 +76,13 @@ void startSNTP(void)
     do {
         /* Get the time using the built in NTP server list: */
 
-        retval = SNTP_getTime(ntpList, (sizeof(ntpList) / sizeof (const char *)), &timeval, &ntpTimeStamp);
+        retval = SNTP_getTime(ntpList, (sizeof(ntpList) / sizeof(const char *)), &timeval, &ntpTimeStamp);
         if (retval != 0) {
-//            Display_printf(display, 0, 0,
-                printf("startSNTP: couldn't get time (%d), will retry in %d secs ...",
-                retval, NTP_POLL_TIME);
+            //            Display_printf(display, 0, 0,
+            printf("startSNTP: couldn't get time (%d), will retry in %d secs ...",
+                   retval, NTP_POLL_TIME);
             sleep(NTP_POLL_TIME);
-//            Display_printf(display, 0, 0, "startSNTP: retrying ...");
+            //            Display_printf(display, 0, 0, "startSNTP: retrying ...");
         }
 
         /* Save the current (NTP Epoch based) time */
@@ -93,14 +90,15 @@ void startSNTP(void)
 
     } while (retval < 0);
 
-     /* Set the time. Always pass a time value based on the UNIX Epoch */
+    /* Set the time. Always pass a time value based on the UNIX Epoch */
     currentTimeUnix = TIME_NTP_TO_UNIX(currentTimeNtp);
     tspec.tv_nsec = 0;
     tspec.tv_sec = currentTimeUnix;
     if (clock_settime(CLOCK_REALTIME, &tspec) != 0) {
-//        Display_printf(display, 0, 0,
-//                "startSNTP: Failed to set current time\n");
-        while(1);
+        //        Display_printf(display, 0, 0,
+        //                "startSNTP: Failed to set current time\n");
+        while (1)
+            ;
     }
 
     /*
@@ -115,5 +113,5 @@ void startSNTP(void)
     /* Time APIs for GCC and IAR expect times based on the UNIX Epoch */
     ts = currentTimeUnix;
 #endif
-//    printf("startSNTP: Current time: %s\n", ctime(&ts));
+    //    printf("startSNTP: Current time: %s\n", ctime(&ts));
 }

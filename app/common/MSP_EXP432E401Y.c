@@ -793,17 +793,17 @@ const UARTMSP432E4_HWAttrs uartMSP432E4HWAttrs[MSP_EXP432E401Y_UARTCOUNT] = {
         .rtsPin = UARTMSP432E4_PIN_UNASSIGNED
     },
     {
-           .baseAddr = UART7_BASE,
-           .intNum = INT_UART7,
-           .intPriority = (~0),
-           .flowControl = UARTMSP432E4_FLOWCTRL_NONE,
-           .ringBufPtr  = uartMSP432E4RingBuffer[MSP_EXP432E401Y_UART7],
-           .ringBufSize = sizeof(uartMSP432E4RingBuffer[MSP_EXP432E401Y_UART7]),
-           .rxPin = UARTMSP432E4_PC4_U7RX,
-           .txPin = UARTMSP432E4_PC5_U7TX,
-           .ctsPin = UARTMSP432E4_PIN_UNASSIGNED,
-           .rtsPin = UARTMSP432E4_PIN_UNASSIGNED,
-           .errorFxn = NULL
+        .baseAddr = UART7_BASE,
+        .intNum = INT_UART7,
+        .intPriority = (~0),
+        .flowControl = UARTMSP432E4_FLOWCTRL_NONE,
+        .ringBufPtr  = uartMSP432E4RingBuffer[MSP_EXP432E401Y_UART7],
+        .ringBufSize = sizeof(uartMSP432E4RingBuffer[MSP_EXP432E401Y_UART7]),
+        .rxPin = UARTMSP432E4_PC4_U7RX,
+        .txPin = UARTMSP432E4_PC5_U7TX,
+        .ctsPin = UARTMSP432E4_PIN_UNASSIGNED,
+        .rtsPin = UARTMSP432E4_PIN_UNASSIGNED,
+        .errorFxn = NULL
     }
 };
 

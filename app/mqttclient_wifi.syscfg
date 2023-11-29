@@ -1,0 +1,130 @@
+/**
+ * These arguments were used when this file was generated. They will be automatically applied on subsequent loads
+ * via the GUI or CLI. Run CLI with '--help' for additional information on how to override these arguments.
+ * @cliArgs --board "/ti/boards/MSP_EXP432E401Y_WITHOUT_USB" --product "simplelink_msp432e4_sdk@4.10.00.13"
+ * @versions {"data":"2020021217","timestamp":"2020021217","tool":"1.4.0+1234","templates":"2020021217"}
+ */
+const CC3120BOOST = scripting.addHardware("/ti/boards/boosterpacks/CC3120BOOST", "boosterpack2");
+
+/**
+ * Import the modules used in this configuration.
+ */
+const Display  = scripting.addModule("/ti/display/Display", {}, false);
+const Display1 = Display.addInstance();
+const GPIO     = scripting.addModule("/ti/drivers/GPIO");
+const GPIO1    = GPIO.addInstance();
+const GPIO2    = GPIO.addInstance();
+const GPIO3    = GPIO.addInstance();
+const GPIO4    = GPIO.addInstance();
+const I2C      = scripting.addModule("/ti/drivers/I2C", {}, false);
+const I2C1     = I2C.addInstance();
+const RTOS     = scripting.addModule("/ti/drivers/RTOS");
+const SPI      = scripting.addModule("/ti/drivers/SPI", {}, false);
+const SPI1     = SPI.addInstance();
+const SPI2     = SPI.addInstance();
+const Button   = scripting.addModule("/ti/drivers/apps/Button", {}, false);
+const Button1  = Button.addInstance();
+const Button2  = Button.addInstance();
+const LED      = scripting.addModule("/ti/drivers/apps/LED", {}, false);
+const LED1     = LED.addInstance();
+const LED2     = LED.addInstance();
+const SlNet    = scripting.addModule("/ti/net/SlNet", {}, false);
+const SlNet1   = SlNet.addInstance();
+
+/**
+ * Write custom configuration values to the imported modules.
+ */
+Display1.$hardware       = system.deviceData.board.components.XDS110UART;
+Display1.$name           = "UART0";
+Display1.uart.$name      = "MSP_EXP432E401Y_UART0";
+Display1.uart.uart.$name = "MyUART1";
+
+GPIO1.$name            = "MSP_EXP432E401Y_HOST_IRQ";
+GPIO1.interruptTrigger = "Rising Edge";
+GPIO1.$hardware        = CC3120BOOST.components.IRQ;
+GPIO1.pull             = "Pull Up";
+
+GPIO2.$name           = "MSP_EXP432E401Y_nHIB_pin";
+GPIO2.mode            = "Output";
+GPIO2.outputStrength  = "High";
+GPIO2.gpioPin.$assign = "expansion.40";
+
+GPIO3.$name              = "MSP_EXP432E401Y_SDSPI_CS";
+GPIO3.mode               = "Output";
+GPIO3.outputStrength     = "High";
+GPIO3.initialOutputState = "High";
+GPIO3.gpioPin.$assign    = "boosterpack.8";
+
+GPIO4.$hardware          = CC3120BOOST.components.CS;
+GPIO4.$name              = "MSP_EXP432E401Y_CS_pin";
+GPIO4.initialOutputState = "High";
+GPIO4.outputStrength     = "High";
+
+I2C1.$name              = "MSP_EXP432E401Y_I2C2";
+I2C1.i2c.$name          = "MyI2C1";
+I2C1.i2c.$assign        = "I2C2";
+I2C1.i2c.sdaPin.$assign = "boosterpack2.10";
+I2C1.i2c.sclPin.$assign = "boosterpack2.9";
+
+RTOS.name = "FreeRTOS";
+
+SPI1.$name       = "MSP_EXP432E401Y_SPI2";
+SPI1.mode        = "Four Pin SS Active Low";
+SPI1.spi.$name   = "MySSI1";
+SPI1.spi.$assign = "SSI2";
+
+SPI2.$hardware = CC3120BOOST.components.CC3120BOOST_SPI;
+SPI2.$name     = "MSP_EXP432E401Y_SPI3";
+SPI2.spi.$name = "MySSI1";
+
+Button1.$name                    = "MSP_EXP432E401Y_GPIO_USR_SW1";
+Button1.$hardware                = system.deviceData.board.components.USR_SW1;
+Button1.gpioPin.$name            = "CONFIG_GPIO_0";
+Button1.gpioPin.interruptTrigger = "Rising Edge";
+
+Button2.$hardware                = system.deviceData.board.components.USR_SW2;
+Button2.$name                    = "MSP_EXP432E401Y_GPIO_USR_SW2";
+Button2.gpioPin.$name            = "CONFIG_GPIO_1";
+Button2.gpioPin.interruptTrigger = "Rising Edge";
+
+LED1.$name                  = "MSP_EXP432E401Y_GPIO_D1";
+LED1.$hardware              = system.deviceData.board.components.D1;
+LED1.gpioPin.outputStrength = "High";
+
+LED2.$name                  = "MSP_EXP432E401Y_GPIO_D2";
+LED2.$hardware              = system.deviceData.board.components.D2;
+LED2.gpioPin.outputStrength = "High";
+
+SlNet1.$name             = "CONFIG_SLNET_0";
+SlNet1.networkIfFxnList  = "Custom";
+SlNet1.ifName            = "CC32xx";
+SlNet1.enableSecureSocks = false;
+SlNet1.customFuncList    = "SlNetIfConfigWifi";
+
+/**
+ * Pinmux solution for unlocked pins/peripherals. This ensures that minor changes to the automatic solver in a future
+ * version of the tool will not impact the pinmux you originally saw.  These lines can be completely deleted in order to
+ * re-solve from scratch.
+ */
+Display1.uart.uart.$suggestSolution       = "UART0";
+Display1.uart.uart.txPin.$suggestSolution = "34";
+Display1.uart.uart.rxPin.$suggestSolution = "33";
+GPIO1.gpioPin.$suggestSolution            = "71";
+GPIO4.gpioPin.$suggestSolution            = "106";
+SPI1.spi.sclkPin.$suggestSolution         = "4";
+SPI1.spi.misoPin.$suggestSolution         = "1";
+SPI1.spi.mosiPin.$suggestSolution         = "2";
+SPI1.spi.ssPin.$suggestSolution           = "3";
+SPI1.spi.dmaRxChannel.$suggestSolution    = "UDMA_CH12";
+SPI1.spi.dmaTxChannel.$suggestSolution    = "UDMA_CH13";
+SPI2.spi.$suggestSolution                 = "SSI3";
+SPI2.spi.sclkPin.$suggestSolution         = "5";
+SPI2.spi.misoPin.$suggestSolution         = "27";
+SPI2.spi.mosiPin.$suggestSolution         = "11";
+SPI2.spi.ssPin.$suggestSolution           = "6";
+SPI2.spi.dmaRxChannel.$suggestSolution    = "UDMA_CH14";
+SPI2.spi.dmaTxChannel.$suggestSolution    = "UDMA_CH15";
+Button1.gpioPin.gpioPin.$suggestSolution  = "116";
+Button2.gpioPin.gpioPin.$suggestSolution  = "117";
+LED1.gpioPin.gpioPin.$suggestSolution     = "108";
+LED2.gpioPin.gpioPin.$suggestSolution     = "107";
